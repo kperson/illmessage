@@ -13,7 +13,7 @@ case class Subscription(
   accountId: String
 ) {
 
-  def id = {
+  def id: String = {
     val text = s"exchange:$exchange:bindingKey:$bindingKey:queue:$queue:accountId:$accountId"
     java.security.MessageDigest.getInstance("MD5")
       .digest(text.getBytes())

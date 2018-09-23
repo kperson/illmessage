@@ -13,7 +13,13 @@ import com.github.kperson.model.{Subscription => MessageSubscription}
 import scala.concurrent.stm.{atomic, Ref}
 
 
-case class MessagePayload(message: Message, subscription: MessageSubscription, messageId: MessageId)
+case class MessagePayload[C](message: Message, subscription: MessageSubscription, messageId: MessageId, context: C)
+
+trait ACKCallback[C] {
+
+  def ack(messageId: String, context: C)
+
+}
 
 object Multiplex {
 
@@ -21,37 +27,42 @@ object Multiplex {
   type SubscriptionId = String
   type MessageCount = Long
   type IsPendingDelivery = Boolean
-  type MessageMap = Map[MessageId, (Message, MessageCount)]
-  type SubscriptionMap = Map[SubscriptionId, (MessageSubscription, List[(MessageId, IsPendingDelivery)])]
 
-  def source(queuedForSendLimit: Long, requestIncrement: Long): Flow[MessagePayload, MessagePayload, NotUsed] = {
-    val multi = new Multiplex(queuedForSendLimit, requestIncrement)
+  def source[C](
+    queuedForSendLimit: Long,
+    requestIncrement: Long,
+    ackCallback: ACKCallback[C]
+ ): Flow[MessagePayload[C], MessagePayload[C], NotUsed] = {
+    val multi = new Multiplex[C](queuedForSendLimit, requestIncrement, ackCallback)
     Flow.fromSinkAndSourceCoupled(Sink.fromSubscriber(multi), Source.fromPublisher(multi))
   }
 
 }
 
 
-class Multiplex(
+class Multiplex[C](
   queuedForSendLimit: Long,
-  requestIncrement: Long
+  requestIncrement: Long,
+  ackCallback: ACKCallback[C]
 )
-extends Subscriber[MessagePayload] with Publisher[MessagePayload] {
+extends Subscriber[MessagePayload[C]] with Publisher[MessagePayload[C]] {
 
   //PUBLISHER
-  private var downStreamSubscription: Option[MultiplexSubscription] = None
-  private var downStreamSubscriber: Option[Subscriber[_ >: MessagePayload]] = None
+  private var downStreamSubscription: Option[MultiplexSubscription[C]] = None
+  private var downStreamSubscriber: Option[Subscriber[_ >: MessagePayload[C]]] = None
 
-  def subscribe(s: Subscriber[_ >: MessagePayload]) {
+  def subscribe(s: Subscriber[_ >: MessagePayload[C]]) {
     downStreamSubscriber = Some(s)
     (downStreamSubscriber, upstreamSubscription) match {
       case (Some(dSubscriber), Some(uSubscription)) =>
-        val subscription = new MultiplexSubscription(
+        val subscription = new MultiplexSubscription[C](
           queuedForSendLimit,
           requestIncrement,
           uSubscription,
-          dSubscriber
+          dSubscriber,
+          ackCallback
         )
+
         downStreamSubscription = Some(subscription)
         dSubscriber.onSubscribe(subscription)
       case _ =>
@@ -65,11 +76,12 @@ extends Subscriber[MessagePayload] with Publisher[MessagePayload] {
     upstreamSubscription = Some(s)
     (downStreamSubscriber, upstreamSubscription) match {
       case (Some(dSubscriber), Some(uSubscription)) =>
-        val subscription = new MultiplexSubscription(
+        val subscription = new MultiplexSubscription[C](
           queuedForSendLimit,
           requestIncrement,
           uSubscription,
-          dSubscriber
+          dSubscriber,
+          ackCallback
         )
         downStreamSubscription = Some(subscription)
         dSubscriber.onSubscribe(subscription)
@@ -77,7 +89,7 @@ extends Subscriber[MessagePayload] with Publisher[MessagePayload] {
     }
   }
 
-  def onNext(t: MessagePayload) {
+  def onNext(t: MessagePayload[C]) {
     downStreamSubscription.foreach { _.onUpStreamMessageReceived(t) }
   }
 
@@ -91,19 +103,20 @@ extends Subscriber[MessagePayload] with Publisher[MessagePayload] {
 
 }
 
-class MultiplexSubscription(
+class MultiplexSubscription[C](
   queuedForSendLimit: Long,
   requestIncrement: Long,
   upstreamSubscription: Subscription,
-  downstreamSubscriber: Subscriber[_ >: MessagePayload],
+  downstreamSubscriber: Subscriber[_ >: MessagePayload[C]],
+  ackCallback: ACKCallback[C],
 ) extends Subscription {
 
   val downstreamDemand = Ref(0L)
   val queuedForSendCount = Ref(0L)
 
-  val messageMap = Ref(Map[String, (Message, MessageCount)]())
+  val messageMap = Ref(Map[String, (Message, MessageCount, C)]())
   val subscriptionMap = Ref(Map[SubscriptionId, (MessageSubscription, List[(MessageId, IsPendingDelivery)])]())
-  val pendingPayloads = Ref(List[MessagePayload]())
+  val pendingPayloads = Ref(List[MessagePayload[C]]())
   val isRunning = Ref(false)
   private var isOpen = true
 
@@ -172,14 +185,14 @@ class MultiplexSubscription(
   }
 
 
-  def onUpStreamMessageReceived(payload: MessagePayload) {
+  def onUpStreamMessageReceived(payload: MessagePayload[C]) {
     atomic { implicit tx =>
       val mMap = messageMap()
       mMap.get(payload.messageId) match {
-        case Some((m, ct)) =>
-          messageMap.set(mMap + (payload.messageId -> (m, ct + 1L)))
+        case Some((m, ct, context)) =>
+          messageMap.set(mMap + (payload.messageId -> (m, ct + 1L, context)))
         case _ =>
-          messageMap.set(mMap + (payload.messageId -> (payload.message, 1L)))
+          messageMap.set(mMap + (payload.messageId -> (payload.message, 1L, payload.context)))
       }
       val (sub, subMessages) = subscriptionMap().getOrElse(payload.subscription.id, (payload.subscription, List.empty))
       val shouldAddToPending = subMessages.nonEmpty
@@ -195,7 +208,7 @@ class MultiplexSubscription(
     val ackRequired = atomic { implicit tx =>
       queuedForSendCount.transform { _ - 1L }
       val mMap = messageMap()
-      val (sentMessage, remainingCount) = mMap(messageId)
+      val (sentMessage, remainingCount, completedMessageContext) = mMap(messageId)
       val ackRequired = if(remainingCount == 1L) {
         //if this is the last item, remove the map
          messageMap.set(mMap - messageId)
@@ -203,7 +216,7 @@ class MultiplexSubscription(
       }
       else {
         //drop the reference count by 1
-        messageMap.set(mMap + (messageId -> (sentMessage, remainingCount - 1L)))
+        messageMap.set(mMap + (messageId -> (sentMessage, remainingCount - 1L, completedMessageContext)))
         false
       }
 
@@ -219,8 +232,8 @@ class MultiplexSubscription(
         val (nextMessageId, _) = newMessages.head
         val newMessageList = List((nextMessageId, true)) ++ newMessages.drop(1)
         subscriptionMap.set(sMap + (subscriptionId -> (sub, newMessageList)))
-        val (nextMessage, _) = mMap.apply(nextMessageId)
-        pendingPayloads.transform { _ ++ List(MessagePayload(nextMessage, sub, nextMessageId)) }
+        val (nextMessage, _, nextMessageContext) = mMap.apply(nextMessageId)
+        pendingPayloads.transform { _ ++ List(MessagePayload(nextMessage, sub, nextMessageId, nextMessageContext)) }
       }
       ackRequired
     }

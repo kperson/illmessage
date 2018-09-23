@@ -20,7 +20,7 @@ object Routing {
 
   def handle(dao: DAO, messages: List[Message]): Future[Any] = {
     //fetch all the subscriptions
-    dao.fetchSubscriptions.flatMap { case subscriptions =>
+    dao.fetchSubscriptions.flatMap { subscriptions =>
       serializeFutures(messages) { message =>
         //find all the matching subscriptions
         val matchSubscriptions = subscriptions.getOrElse(message.exchange, List.empty).filter { subscription =>
@@ -32,13 +32,13 @@ object Routing {
         )
 
         //deliver the dead letter messages
-        resultsFuture.map { case results =>
+        resultsFuture.map { results =>
           results.collect {
             case Right(deadLetter) => deadLetter
           }
         }.map { deadMessages =>
           Future.sequence(
-            deadMessages.map { dao.saveDeadLetterMessage(_) }
+            deadMessages.map { dao.saveDeadLetterMessage }
           )
         }
       }
