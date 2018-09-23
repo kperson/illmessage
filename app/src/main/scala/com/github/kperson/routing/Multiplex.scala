@@ -14,6 +14,8 @@ import scala.concurrent.stm.{atomic, Ref}
 
 
 case class MessagePayload[C](message: Message, subscription: MessageSubscription, messageId: MessageId, context: C)
+case class MessageSubscriptions[C](message: Message, subscriptions: List[MessageSubscription], messageId: MessageId, context: C)
+
 
 trait ACKCallback[C] {
 
@@ -28,13 +30,13 @@ object Multiplex {
   type MessageCount = Long
   type IsPendingDelivery = Boolean
 
-  def source[C](
+  def flow[C](
     queuedForSendLimit: Long,
     requestIncrement: Long,
     ackCallback: ACKCallback[C]
- ): Flow[MessagePayload[C], MessagePayload[C], NotUsed] = {
+ ): (Flow[MessageSubscriptions[C], MessagePayload[C], NotUsed], (String, String) => Unit) = {
     val multi = new Multiplex[C](queuedForSendLimit, requestIncrement, ackCallback)
-    Flow.fromSinkAndSourceCoupled(Sink.fromSubscriber(multi), Source.fromPublisher(multi))
+    (Flow.fromSinkAndSource(Sink.fromSubscriber(multi), Source.fromPublisher(multi)), multi.onMessageSent)
   }
 
 }
@@ -45,11 +47,16 @@ class Multiplex[C](
   requestIncrement: Long,
   ackCallback: ACKCallback[C]
 )
-extends Subscriber[MessagePayload[C]] with Publisher[MessagePayload[C]] {
+extends Subscriber[MessageSubscriptions[C]] with Publisher[MessagePayload[C]] {
 
   //PUBLISHER
   private var downStreamSubscription: Option[MultiplexSubscription[C]] = None
   private var downStreamSubscriber: Option[Subscriber[_ >: MessagePayload[C]]] = None
+
+
+  def onMessageSent(subscriptionId: SubscriptionId, messageId: MessageId) {
+    downStreamSubscription.foreach { _.onDownStreamMessageComplete(subscriptionId, messageId) }
+  }
 
   def subscribe(s: Subscriber[_ >: MessagePayload[C]]) {
     downStreamSubscriber = Some(s)
@@ -65,9 +72,12 @@ extends Subscriber[MessagePayload[C]] with Publisher[MessagePayload[C]] {
 
         downStreamSubscription = Some(subscription)
         dSubscriber.onSubscribe(subscription)
+        uSubscription.request(requestIncrement)
       case _ =>
     }
   }
+
+  private val bootstrap = PartialFunction[(Option[Subscriber[_ >: MessagePayload[C]]],Option[MultiplexSubscription[C]]), Any]
 
   //SUBSCRIBER
   private var upstreamSubscription: Option[Subscription] = None
@@ -89,16 +99,16 @@ extends Subscriber[MessagePayload[C]] with Publisher[MessagePayload[C]] {
     }
   }
 
-  def onNext(t: MessagePayload[C]) {
+  def onNext(t: MessageSubscriptions[C]) {
     downStreamSubscription.foreach { _.onUpStreamMessageReceived(t) }
   }
 
   def onComplete() {
-    downStreamSubscription.foreach { _.cancel() }
+    downStreamSubscription.foreach { _.onUpstreamComplete() }
   }
 
   def onError(t: Throwable) {
-    downStreamSubscription.foreach { _.cancel() }
+    downStreamSubscriber.foreach { _.onError(t) }
   }
 
 }
@@ -119,6 +129,7 @@ class MultiplexSubscription[C](
   val pendingPayloads = Ref(List[MessagePayload[C]]())
   val isRunning = Ref(false)
   private var isOpen = true
+  private var upstreamComplete = false
 
 
   upstreamSubscription.request(requestIncrement)
@@ -155,6 +166,7 @@ class MultiplexSubscription[C](
       val items = if(isR) {
         val dequeueAmount = math.min(downstreamDemand(), pending.length)
         pendingPayloads.set(pending.drop(dequeueAmount.toInt))
+        queuedForSendCount.transform { _ + dequeueAmount }
         pending.take(dequeueAmount.toInt)
       }
       else {
@@ -162,50 +174,77 @@ class MultiplexSubscription[C](
       }
       items
     }
-
     if(items.nonEmpty) {
       items.foreach { i =>
         if(isOpen) {
           downstreamSubscriber.onNext(i)
         }
       }
-      val shouldDeliver = atomic { implicit tx =>
+      val (shouldDeliver) = atomic { implicit tx =>
         val newDemand = downstreamDemand.transformAndGet { _ - items.length }
         isRunning.transformAndGet { _ => newDemand > 0 && pendingPayloads().nonEmpty }
       }
       if(shouldDeliver) {
         deliver()
       }
+      else {
+        checkCompletion()
+      }
+
     }
     else {
       atomic { implicit tx =>
         isRunning.set(false)
       }
+      checkCompletion()
     }
   }
 
+  def onUpstreamComplete() {
+    upstreamComplete = true
+    checkCompletion()
+  }
 
-  def onUpStreamMessageReceived(payload: MessagePayload[C]) {
+  def checkCompletion() {
+    if(upstreamComplete) {
+      val isComplete = atomic { implicit tx =>
+        pendingPayloads().isEmpty && messageMap().isEmpty
+      }
+      if(isComplete) {
+        downstreamSubscriber.onComplete()
+      }
+    }
+  }
+
+  def onUpStreamMessageReceived(groupedPayload: MessageSubscriptions[C]) {
     atomic { implicit tx =>
-      val mMap = messageMap()
-      mMap.get(payload.messageId) match {
-        case Some((m, ct, context)) =>
-          messageMap.set(mMap + (payload.messageId -> (m, ct + 1L, context)))
-        case _ =>
-          messageMap.set(mMap + (payload.messageId -> (payload.message, 1L, payload.context)))
+      groupedPayload.subscriptions.foreach { s =>
+        val mMap = messageMap()
+        mMap.get(groupedPayload.messageId) match {
+          case Some((m, ct, context)) =>
+            messageMap.set(mMap + (groupedPayload.messageId -> (m, ct + 1L, context)))
+          case _ =>
+            messageMap.set(mMap + (groupedPayload.messageId -> (groupedPayload.message, 1L, groupedPayload.context)))
+        }
+        val (sub, subMessages) = subscriptionMap().getOrElse(s.id, (s, List.empty))
+        val shouldAddToPending = subMessages.isEmpty
+        if (shouldAddToPending) {
+          val payload = MessagePayload(groupedPayload.message, s, groupedPayload.messageId, groupedPayload.context)
+          pendingPayloads.transform { _ ++ List(payload) }
+        }
+        subscriptionMap.transform {
+          _ + (sub.id -> (sub, subMessages ++ List((groupedPayload.messageId, shouldAddToPending))))
+        }
       }
-      val (sub, subMessages) = subscriptionMap().getOrElse(payload.subscription.id, (payload.subscription, List.empty))
-      val shouldAddToPending = subMessages.nonEmpty
-      if(shouldAddToPending) {
-        pendingPayloads.transform { _ ++ List(payload) }
-      }
-      subscriptionMap.transform { _ + (sub.id -> (sub, subMessages ++ List((payload.messageId, shouldAddToPending)))) }
+    }
+    val z = atomic { implicit tx =>
+      pendingPayloads()
     }
     deliveryRequested()
   }
 
   def onDownStreamMessageComplete(subscriptionId: SubscriptionId, messageId: MessageId) {
-    val ackRequired = atomic { implicit tx =>
+    val (ackRequired, context) = atomic { implicit tx =>
       queuedForSendCount.transform { _ - 1L }
       val mMap = messageMap()
       val (sentMessage, remainingCount, completedMessageContext) = mMap(messageId)
@@ -235,11 +274,12 @@ class MultiplexSubscription[C](
         val (nextMessage, _, nextMessageContext) = mMap.apply(nextMessageId)
         pendingPayloads.transform { _ ++ List(MessagePayload(nextMessage, sub, nextMessageId, nextMessageContext)) }
       }
-      ackRequired
+      (ackRequired, completedMessageContext)
     }
     if(ackRequired) {
-      //TODO: //ACK message
+      ackCallback.ack(messageId, context)
     }
+    checkCompletion()
     deliveryRequested()
   }
 

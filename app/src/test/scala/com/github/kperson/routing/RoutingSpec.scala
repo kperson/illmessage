@@ -4,6 +4,7 @@ import com.github.kperson.dao.DAO
 import com.github.kperson.model.{DeadLetterMessage, Message, Subscription}
 
 import org.scalamock.scalatest.MockFactory
+
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.concurrent.duration._

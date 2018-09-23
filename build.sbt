@@ -21,5 +21,6 @@ lazy val app = (project in file("app")).
     "org.scala-stm"           %% "scala-stm"                   % "0.8",
     "com.typesafe.akka"       %% "akka-stream"                 % akkaStreamVersion,
     "org.scalatest"           %% "scalatest"                   % scalaTestVersion         % "test",
-    "org.scalamock"           %% "scalamock-scalatest-support" % scalaMockSupportVersion  % "test"
+    "org.scalamock"           %% "scalamock-scalatest-support" % scalaMockSupportVersion  % "test",
+    "com.typesafe.akka"       %% "akka-stream-testkit"         % "2.5.16"                 % "test"
   ))
