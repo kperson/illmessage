@@ -35,9 +35,9 @@ class MultiplexSpec extends FlatSpec with Matchers with AkkaContext with MockFac
     )
     implicit val system = materializer.system
     val ackCallBack = mock[ACKCallback[String]]
-    (ackCallBack.ack _).expects("M1", "HI1").noMoreThanOnce().returning(Unit)
-    (ackCallBack.ack _).expects("M3", "HI3").noMoreThanOnce.returning(Unit)
-    (ackCallBack.ack _).expects("M2", "HI2").noMoreThanOnce.returning(Unit)
+    (ackCallBack.ack _).expects("M1", "HI1").once().returning(Unit)
+    (ackCallBack.ack _).expects("M3", "HI3").once().returning(Unit)
+    (ackCallBack.ack _).expects("M2", "HI2").once().returning(Unit)
     val (flow, completeFunc) = Multiplex.flow(100, 10, ackCallBack)
     val s = Source(List(groupedPayloadOne, groupedPayloadTwo, groupedPayloadThree))
       .via(flow)

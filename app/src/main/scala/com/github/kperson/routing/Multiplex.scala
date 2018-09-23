@@ -72,12 +72,9 @@ extends Subscriber[MessageSubscriptions[C]] with Publisher[MessagePayload[C]] {
 
         downStreamSubscription = Some(subscription)
         dSubscriber.onSubscribe(subscription)
-        uSubscription.request(requestIncrement)
       case _ =>
     }
   }
-
-  private val bootstrap = PartialFunction[(Option[Subscriber[_ >: MessagePayload[C]]],Option[MultiplexSubscription[C]]), Any]
 
   //SUBSCRIBER
   private var upstreamSubscription: Option[Subscription] = None
@@ -132,10 +129,9 @@ class MultiplexSubscription[C](
   private var upstreamComplete = false
 
 
-  upstreamSubscription.request(requestIncrement)
 
   def request(n: Long) {
-    //the downstream is asking for messages
+    upstreamSubscription.request(requestIncrement)
     downstreamDemand.single.transformAndGet(_ + n)
     deliveryRequested()
   }
