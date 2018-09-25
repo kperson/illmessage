@@ -4,8 +4,6 @@ import java.util.Base64
 
 import org.json4s.JsonAST._
 
-import scala.reflect.runtime.universe._
-
 sealed trait DynamoPrimitive {
 
   def flatten: Any
@@ -63,9 +61,9 @@ object DynamoPrimitive {
 
 case class DynamoString(value: String) extends DynamoPrimitive {
 
-  def flatten = value
+  def flatten: String = value
 
-  def asDynamo = {
+  def asDynamo: Map[String, String] = {
     Map("S" -> value)
   }
 
@@ -92,9 +90,9 @@ object DynamoNull extends DynamoPrimitive {
     }
   }
 
-  def flatten = null
+  def flatten: Any = null
 
-  def asDynamo = {
+  def asDynamo: Map[String, Boolean] = {
     Map("NULL" -> true)
   }
 
@@ -108,9 +106,9 @@ case class DynamoBinary(value: Array[Byte]) extends DynamoPrimitive with Equals 
     canEqual(obj) && obj.asInstanceOf[DynamoBinary].value.deep == value.deep
   }
 
-  def flatten = Base64.getEncoder.encodeToString(value)
+  def flatten: String = Base64.getEncoder.encodeToString(value)
 
-  def asDynamo = {
+  def asDynamo: Map[String, String] = {
     Map("B" -> flatten)
   }
 
@@ -129,9 +127,9 @@ object DynamoBinary {
 
 case class DynamoBigDecimal(value: BigDecimal) extends DynamoPrimitive {
 
-  def flatten = value
+  def flatten: BigDecimal = value
 
-  def asDynamo = {
+  def asDynamo: Map[String, String] = {
     Map("N" -> flatten.toString())
   }
 
@@ -152,9 +150,9 @@ object DynamoBigDecimal {
 
 case class DynamoBoolean(value: Boolean) extends DynamoPrimitive {
 
-  def flatten = value
+  def flatten: Boolean = value
 
-  def asDynamo = {
+  def asDynamo: Map[String, Boolean] = {
     Map("BOOL" -> value)
   }
 
@@ -175,9 +173,9 @@ object DynamoBoolean {
 
 case class DynamoStringSet(value: Set[String]) extends DynamoPrimitive {
 
-  def flatten = value
+  def flatten: Set[String] = value
 
-  def asDynamo = {
+  def asDynamo: Map[String, Set[String]] = {
     Map("SS" -> value)
   }
 
@@ -199,9 +197,9 @@ object DynamoStringSet {
 
 case class DynamoBigDecimalSet(value: Set[BigDecimal]) extends DynamoPrimitive {
 
-  def flatten = value
+  def flatten: Set[BigDecimal] = value
 
-  def asDynamo = {
+  def asDynamo: Map[String, Set[String]] = {
     Map("NS" -> value.map { _.toString() })
   }
 
@@ -228,9 +226,9 @@ case class DynamoBinarySet(value: Set[Array[Byte]]) extends DynamoPrimitive with
     canEqual(obj) && obj.asInstanceOf[DynamoBinarySet].value.map { _.deep } == value.map { _.deep }
   }
 
-  def flatten = value.map { Base64.getEncoder.encodeToString(_) }
+  def flatten: Set[String] = value.map { Base64.getEncoder.encodeToString(_) }
 
-  def asDynamo = {
+  def asDynamo: Map[String, Set[String]] = {
     Map("BS" -> flatten)
   }
 
@@ -253,9 +251,9 @@ object DynamoBinarySet {
 
 case class DynamoList(value: List[DynamoPrimitive]) extends DynamoPrimitive {
 
-  def flatten = value.map { _.flatten }
+  def flatten: List[Any] = value.map { _.flatten }
 
-  def asDynamo = {
+  def asDynamo: Map[String, List[Any]] = {
     Map("L" -> value.map { _.asDynamo })
   }
 
@@ -280,7 +278,7 @@ case class DynamoMap(value: Map[String, DynamoPrimitive]) extends DynamoPrimitiv
 
   def flatten: Map[String, Any] = value.map { case (k, v) => (k, v.flatten) }
 
-  def asDynamo = {
+  def asDynamo: Map[String, Map[String, Any]] = {
     val x = value.map { case (k, v) => (k, v.asDynamo) }
     Map("M" -> x)
   }
@@ -294,10 +292,7 @@ object DynamoMap {
   def unapply(arg: JValue): Option[Map[String, DynamoPrimitive]] = {
     arg match {
       case JObject(List(("M", JObject(obj)))) =>
-        val m = obj.map { case (k, v) =>
-          println("HERE")
-          println(v)
-          (k, DynamoPrimitive.fromJValue(v)) }.toMap
+        val m = obj.map { case (k, v) => (k, DynamoPrimitive.fromJValue(v)) }.toMap
         Some(m)
       case _ => None
     }

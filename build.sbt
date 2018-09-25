@@ -13,6 +13,9 @@ lazy val commonSettings = Seq(
 
 lazy val app = (project in file("app")).
   settings(commonSettings: _*).
+  settings(
+    fork in run := true
+  ).
   settings(libraryDependencies ++= Seq (
     "com.amazonaws"           % "aws-lambda-java-events"       % "1.3.0",
     "com.amazonaws"           %  "aws-java-sdk-core"           % "1.11.343",
