@@ -31,23 +31,16 @@ object Multiplex {
   type IsPendingDelivery = Boolean
 
   def flow[C](
-    queuedForSendLimit: Long,
-    requestIncrement: Long,
     ackCallback: ACKCallback[C]
  ): (Flow[MessageSubscriptions[C], MessagePayload[C], NotUsed], (String, String) => Unit) = {
-    val multi = new Multiplex[C](queuedForSendLimit, requestIncrement, ackCallback)
+    val multi = new Multiplex[C](ackCallback)
     (Flow.fromSinkAndSource(Sink.fromSubscriber(multi), Source.fromPublisher(multi)), multi.onMessageSent)
   }
 
 }
 
 
-class Multiplex[C](
-  queuedForSendLimit: Long,
-  requestIncrement: Long,
-  ackCallback: ACKCallback[C]
-)
-extends Subscriber[MessageSubscriptions[C]] with Publisher[MessagePayload[C]] {
+class Multiplex[C](ackCallback: ACKCallback[C]) extends Subscriber[MessageSubscriptions[C]] with Publisher[MessagePayload[C]] {
 
   //PUBLISHER
   private var downStreamSubscription: Option[MultiplexSubscription[C]] = None
@@ -63,8 +56,6 @@ extends Subscriber[MessageSubscriptions[C]] with Publisher[MessagePayload[C]] {
     (downStreamSubscriber, upstreamSubscription) match {
       case (Some(dSubscriber), Some(uSubscription)) =>
         val subscription = new MultiplexSubscription[C](
-          queuedForSendLimit,
-          requestIncrement,
           uSubscription,
           dSubscriber,
           ackCallback
@@ -84,8 +75,6 @@ extends Subscriber[MessageSubscriptions[C]] with Publisher[MessagePayload[C]] {
     (downStreamSubscriber, upstreamSubscription) match {
       case (Some(dSubscriber), Some(uSubscription)) =>
         val subscription = new MultiplexSubscription[C](
-          queuedForSendLimit,
-          requestIncrement,
           uSubscription,
           dSubscriber,
           ackCallback
@@ -111,8 +100,6 @@ extends Subscriber[MessageSubscriptions[C]] with Publisher[MessagePayload[C]] {
 }
 
 class MultiplexSubscription[C](
-  queuedForSendLimit: Long,
-  requestIncrement: Long,
   upstreamSubscription: Subscription,
   downstreamSubscriber: Subscriber[_ >: MessagePayload[C]],
   ackCallback: ACKCallback[C],
@@ -131,7 +118,7 @@ class MultiplexSubscription[C](
 
 
   def request(n: Long) {
-    upstreamSubscription.request(requestIncrement)
+    upstreamSubscription.request(n)
     downstreamDemand.single.transformAndGet(_ + n)
     deliveryRequested()
   }

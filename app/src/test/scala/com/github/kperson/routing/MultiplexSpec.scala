@@ -38,7 +38,7 @@ class MultiplexSpec extends FlatSpec with Matchers with AkkaContext with MockFac
     (ackCallBack.ack _).expects("M1", "HI1").once().returning(Unit)
     (ackCallBack.ack _).expects("M3", "HI3").once().returning(Unit)
     (ackCallBack.ack _).expects("M2", "HI2").once().returning(Unit)
-    val (flow, completeFunc) = Multiplex.flow(100, 10, ackCallBack)
+    val (flow, completeFunc) = Multiplex.flow(ackCallBack)
     val s = Source(List(groupedPayloadOne, groupedPayloadTwo, groupedPayloadThree))
       .via(flow)
       .map { x =>
@@ -59,7 +59,7 @@ class MultiplexSpec extends FlatSpec with Matchers with AkkaContext with MockFac
   it should "handle errors" in withAkka { implicit materializer =>
     implicit val system = materializer.system
     val ackCallBack = mock[ACKCallback[String]]
-    val (flow, completeFunc) = Multiplex.flow(100, 10, ackCallBack)
+    val (flow, completeFunc) = Multiplex.flow(ackCallBack)
     val s = Source(List(groupedPayloadOne, groupedPayloadTwo, groupedPayloadThree))
       .via(flow)
       .map { x =>
