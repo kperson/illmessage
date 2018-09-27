@@ -1,7 +1,6 @@
 package com.github.kperson.aws.sqs
 
-import com.amazonaws.auth.AWSCredentials
-
+import com.amazonaws.auth.AWSCredentialsProvider
 import com.github.kperson.aws.{Credentials, HttpRequest}
 
 import org.reactivestreams.Publisher
@@ -23,12 +22,12 @@ case class SNSMessage[T](id: String, receiptHandle: String, body: T, attributes:
 class SQSQueueClient(
   region: String,
   accountId: String,
-  credentials: AWSCredentials = Credentials.defaultCredentials
+  credentialsProvider: AWSCredentialsProvider = Credentials.defaultCredentialsProvider
 )(implicit ec: ExecutionContext) {
 
   private def createRequest(method: String, path: String = "", queryParams: Map[String, String]): HttpRequest = {
     val params = queryParams.map { case (k, v) => (k, Some(v)) }
-    new HttpRequest(credentials, "sqs", region, s"https://sqs.$region.amazonaws.com", method = method, queryParams = params, path = path)
+    new HttpRequest(credentialsProvider.getCredentials, "sqs", region, s"https://sqs.$region.amazonaws.com", method = method, queryParams = params, path = path)
   }
 
   def createQueue(
