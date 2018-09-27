@@ -220,9 +220,6 @@ class MultiplexSubscription[C](
         }
       }
     }
-    val z = atomic { implicit tx =>
-      pendingPayloads()
-    }
     deliveryRequested()
   }
 

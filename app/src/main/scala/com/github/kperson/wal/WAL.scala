@@ -4,7 +4,8 @@ import java.util.{Timer, TimerTask, UUID}
 
 import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.model.Message
-import org.json4s.NoTypeHints
+
+import org.json4s.{Formats, NoTypeHints}
 import org.json4s.jackson.Serialization
 
 import scala.concurrent.{Future, Promise}
@@ -19,10 +20,10 @@ case class WALRecord(
 
 class WAL(client: DynamoClient, walTable: String) {
 
-  implicit val defaultFormats = Serialization.formats(NoTypeHints)
+  implicit val defaultFormats: Formats = Serialization.formats(NoTypeHints)
 
-  val partitionKey = "wal_partition_key"
-  val maxWriteScheduleDelay = 6.seconds
+  private val partitionKey = "wal_partition_key"
+  private val maxWriteScheduleDelay = 6.seconds
 
   import client.ec
 
@@ -84,7 +85,7 @@ class WAL(client: DynamoClient, walTable: String) {
           timer.schedule(new TimerTask {
             def run() {
               val f = writeWALRecords(rs.unprocessedItems, nextDelay, allowedIterations = allowedIterations - 1)
-              f.onComplete { p.complete(_) }
+              f.onComplete { p.complete }
             }
           }, delay.toMillis)
           p.future

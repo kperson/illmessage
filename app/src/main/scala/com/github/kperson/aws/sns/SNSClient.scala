@@ -1,4 +1,4 @@
-package com.github.kperson.sns
+package com.github.kperson.aws.sns
 
 import com.amazonaws.auth.AWSCredentialsProvider
 

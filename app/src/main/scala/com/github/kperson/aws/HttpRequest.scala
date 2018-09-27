@@ -1,15 +1,18 @@
 package com.github.kperson.aws
 
 import com.amazonaws.auth.AWSCredentials
-import org.asynchttpclient.{Dsl, RequestBuilder}
-import AWSHttp._
+
+import org.asynchttpclient.{AsyncHttpClient, Dsl, RequestBuilder}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import AWSHttp._
+
+
 object HttpRequest {
 
-  val httpClient = Dsl.asyncHttpClient()
+  val httpClient: AsyncHttpClient = Dsl.asyncHttpClient()
 
 }
 
@@ -26,16 +29,16 @@ class HttpRequest(
   payload: Array[Byte] = Array.empty
 ) {
 
-  val finalMethod = method.toUpperCase
-  val finalPath = if (path.startsWith("/")) path else "/" + path
-  val finalServiceEndpoint = if (serviceEndpoint.endsWith("/")) serviceEndpoint.substring(0, serviceEndpoint.length - 1) else serviceEndpoint
+  private val finalMethod = method.toUpperCase
+  private val finalPath = if (path.startsWith("/")) path else "/" + path
+  private val finalServiceEndpoint = if (serviceEndpoint.endsWith("/")) serviceEndpoint.substring(0, serviceEndpoint.length - 1) else serviceEndpoint
 
 
-  val builder = new RequestBuilder(finalMethod, true)
-  builder.setUrl(s"${serviceEndpoint}${AWSSigning.uriEncode(finalPath, false)}")
+  private val builder = new RequestBuilder(finalMethod, true)
+  builder.setUrl(s"$serviceEndpoint${AWSSigning.uriEncode(finalPath, isParameter = false)}")
 
 
-  val signing = AWSSigning(
+  private val signing = AWSSigning(
     awsService,
     credentials,
     region,

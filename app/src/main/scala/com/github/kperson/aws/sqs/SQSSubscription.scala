@@ -53,7 +53,7 @@ class SQSSubscription(
     if(isR && isOpen) {
       val fetchAmount = math.min(maxFetchAmount, currentDemand)
       val remoteFetch = queueClient.fetchMessages(queueName, Some(10.seconds), maxNumberOfMessages = fetchAmount.toInt)
-      remoteFetch.onSuccess { case res =>
+      remoteFetch.foreach { res =>
         if(!res.isEmpty) {
           //reset the back off
           nextTimeout = backOffStrategy.map { _.initialTimeout }
@@ -83,7 +83,7 @@ class SQSSubscription(
           }
         }
       }
-      remoteFetch.onFailure { case ex =>
+      remoteFetch.failed.foreach { ex =>
         isOpen = false
         subscriber.onError(ex)
       }

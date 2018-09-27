@@ -54,7 +54,7 @@ class DynamoClient(
   }
 
   def batchPutItems[A <: AnyRef](table: String, items: List[A], convertFromSnakeCase: Boolean = false)(implicit formats: Formats, mf: Manifest[A]): Future[BatchInsertResults[A]] = {
-    require(items.size <= 25, "you may only enter 25 items per batch")
+    require(items.length <= 25, "you may only enter 25 items per batch")
     if(items.isEmpty) {
       Future.successful(BatchInsertResults(List.empty))
     }

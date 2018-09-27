@@ -1,6 +1,5 @@
 package com.github.kperson.aws
 
-import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
@@ -15,6 +14,7 @@ sealed trait S3Payload
 
 
 //https://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html
+
 case class AWSSigning(
   service: String,
   credentials: AWSCredentials,
@@ -26,36 +26,37 @@ case class AWSSigning(
   payload: Array[Byte] = Array.empty,
   date: Date = new Date()
 ) {
-  val payloadHash = AWSSigning.toHex(AWSSigning.SHA256(payload))
-  val encodeURI = AWSSigning.uriEncode(canonicalURI, false)
 
-  val securityTokenHeaders: Map[String, String] = if(credentials.isInstanceOf[BasicSessionCredentials]) {
-    Map("x-amz-security-token" -> credentials.asInstanceOf[BasicSessionCredentials].getSessionToken)
-  }
-  else {
-    Map.empty
-  }
+  val payloadHash: String = AWSSigning.toHex(AWSSigning.SHA256(payload))
+  val encodeURI: String = AWSSigning.uriEncode(canonicalURI, isParameter = false)
 
-  val headersWithoutSignature = headersToSign ++ Map(
+  val securityTokenHeaders: Map[String, String] =
+    credentials match {
+      case c: BasicSessionCredentials => Map("x-amz-security-token" -> c.getSessionToken)
+      case _ => Map.empty
+    }
+
+  val headersWithoutSignature: Map[String, String] = headersToSign ++ Map(
     "x-amz-content-sha256" -> payloadHash,
     "x-amz-date" -> AWSSigning.longDateFormatter.format(date)
   ) ++ securityTokenHeaders
 
-  def sortedHeaderKeys = headersWithoutSignature.keys.toList.sortWith { (kOne, kTwo) => kOne.toLowerCase < kTwo.toLowerCase }
+  def sortedHeaderKeys: List[String] = headersWithoutSignature.keys.toList.sortWith { (kOne, kTwo) => kOne.toLowerCase < kTwo.toLowerCase }
 
-  def encodedParams = {
+  def encodedParams: Map[String, String] = {
     queryParams.map { case (k, v) =>
-      (AWSSigning.uriEncode(k, true), AWSSigning.uriEncode(v.getOrElse(""), true))
+      (AWSSigning.uriEncode(k, isParameter = true), AWSSigning.uriEncode(v.getOrElse(""), isParameter = true))
     }
   }
 
-  def sortedParams = {
+  def sortedParams: List[(String, String)] = {
     val ep = encodedParams
     val sortedKeys = ep.keys.toList.sortWith { (kOne, kTwo) => kOne < kTwo }
     sortedKeys.map { k =>
       (k, ep(k))
     }
   }
+
   def canonicalRequest: String = {
     val strBuilder = new StringBuilder()
     strBuilder.append(httpMethod + "\n")
@@ -95,7 +96,7 @@ case class AWSSigning(
 
   def authorizationHeader: String = {
       val sortedHeadersDelimited = sortedHeaderKeys.map { _.toLowerCase }.mkString(";")
-      s"${AWSSigning.signingVersion}-${AWSSigning.signingAlgorithm} Credential=${credentials.getAWSAccessKeyId}/${AWSSigning.shortDateFormatter.format(date)}/${region}/${service}/${AWSSigning.signingVersion.toLowerCase}_request,SignedHeaders=${sortedHeadersDelimited},Signature=${signature}"
+      s"${AWSSigning.signingVersion}-${AWSSigning.signingAlgorithm} Credential=${credentials.getAWSAccessKeyId}/${AWSSigning.shortDateFormatter.format(date)}/$region/$service/${AWSSigning.signingVersion.toLowerCase}_request,SignedHeaders=$sortedHeadersDelimited,Signature=$signature"
 
   }
 
@@ -110,16 +111,16 @@ object AWSSigning {
   val signingVersion = "AWS4"
   val signingAlgorithm = "HMAC-SHA256"
 
-  private lazy val shortDateFormatter = sFormatter
-  private lazy val longDateFormatter = lFormatter
+  private lazy val shortDateFormatter = sFormatter()
+  private lazy val longDateFormatter = lFormatter()
 
-  private def sFormatter() = {
+  private def sFormatter(): SimpleDateFormat = {
     val f = new SimpleDateFormat("yyyyMMdd")
     f.setTimeZone(TimeZone.getTimeZone("GMT"))
     f
   }
 
-  private def lFormatter() = {
+  private def lFormatter(): SimpleDateFormat = {
     val f = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'")
     f.setTimeZone(TimeZone.getTimeZone("GMT"))
     f
@@ -134,7 +135,7 @@ object AWSSigning {
 
   def SHA256(bytes: Array[Byte]): Array[Byte] = {
     val sha256Digest = MessageDigest.getInstance("SHA-256")
-    return sha256Digest.digest(bytes)
+    sha256Digest.digest(bytes)
   }
 
   def toHex(bytes: Array[Byte]): String = bytes.map("%02x".format(_)).mkString

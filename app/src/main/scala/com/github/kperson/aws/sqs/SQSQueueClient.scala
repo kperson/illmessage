@@ -101,7 +101,7 @@ class SQSQueueClient(
     ).collect {
       case (k, Some(v)) => (k, v)
     }
-    createRequest("POST",  s"$accountId/$queueName/", baseParams).run((waitTime.getOrElse(1.seconds) + 3.second)).map { res =>
+    createRequest("POST",  s"$accountId/$queueName/", baseParams).run(waitTime.getOrElse(1.seconds) + 3.second).map { res =>
       val xml = XML.loadString(new String(res.body))
       (xml \\ "ReceiveMessageResult" \\ "Message").map {  m =>
         val messageId = (m \ "MessageId").text
