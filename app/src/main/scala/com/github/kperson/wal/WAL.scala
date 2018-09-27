@@ -1,13 +1,14 @@
 package com.github.kperson.wal
 
-import java.util.UUID
+import java.util.{Timer, TimerTask, UUID}
 
 import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.model.Message
 import org.json4s.NoTypeHints
 import org.json4s.jackson.Serialization
 
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
+import scala.concurrent.duration._
 
 case class WALRecord(
   message: Message,
@@ -21,6 +22,7 @@ class WAL(client: DynamoClient, walTable: String) {
   implicit val defaultFormats = Serialization.formats(NoTypeHints)
 
   val partitionKey = "wal_partition_key"
+  val maxWriteScheduleDelay = 6.seconds
 
   import client.ec
 
@@ -38,7 +40,7 @@ class WAL(client: DynamoClient, walTable: String) {
     }
   }
 
-  def loadRecords(
+  def load(
     base: List[WALRecord] = List.empty,
     lastEvaluatedKey: Option[Map[String, Any]] = None
   ): Future[List[WALRecord]] = {
@@ -55,12 +57,12 @@ class WAL(client: DynamoClient, walTable: String) {
         Future.successful(newBase)
       }
       else {
-        loadRecords(newBase, lastEvaluatedKey)
+        load(newBase, lastEvaluatedKey)
       }
     }
   }
 
-  def removeRecord(messageId: String): Future[Any] = {
+  def remove(messageId: String): Future[Any] = {
     client.deleteItem[WALRecord](
       walTable,
       Map(
@@ -70,10 +72,32 @@ class WAL(client: DynamoClient, walTable: String) {
     )
   }
 
-  private def writeWALRecords(records: List[WALRecord]): Future[Unit] = {
+  private def writeWALRecords(records: List[WALRecord], delay: FiniteDuration = 200.milliseconds, allowedIterations: Int = 15): Future[Any] = {
     client.batchPutItems(walTable, records).flatMap {
-      case rs if rs.unprocessedItems.nonEmpty => writeWALRecords(rs.unprocessedItems)
-      case _ => Future.successful(Unit)
+      case rs if rs.unprocessedItems.nonEmpty =>
+        if(allowedIterations > 1) {
+          //exponential backoff
+          val nextDelay = if (delay * 2 > maxWriteScheduleDelay) maxWriteScheduleDelay else delay * 2
+          val timer = new Timer()
+          val p = Promise[Any]()
+          timer.schedule(new TimerTask {
+            def run() {
+              val f = writeWALRecords(rs.unprocessedItems, nextDelay, allowedIterations = allowedIterations - 1)
+              f.onComplete { p.complete(_) }
+            }
+          }, delay.toMillis)
+          p.future
+        }
+        else {
+          Future.failed(
+            new RuntimeException(
+              "unable to write WAL logs after 15 attempts, " +
+              "some messages may not be delivered if this process crashes " +
+              "in the next few seconds"
+            )
+          )
+        }
+      case _ => Future.successful(true)
     }
   }
 
