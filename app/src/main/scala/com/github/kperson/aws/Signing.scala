@@ -1,5 +1,6 @@
 package com.github.kperson.aws
 
+import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
@@ -8,6 +9,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 import com.amazonaws.auth.{AWSCredentials, BasicSessionCredentials}
+import com.amazonaws.util.SdkHttpUtils
 
 sealed trait S3Payload
 
@@ -137,22 +139,8 @@ object AWSSigning {
 
   def toHex(bytes: Array[Byte]): String = bytes.map("%02x".format(_)).mkString
 
-  def uriEncode(input: CharSequence, encodeSlash: Boolean): String = {
-    val result = new StringBuilder();
-    for { i <- 0 until input.length() } {
-      val ch = input.charAt(i)
-      if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_' || ch == '-' || ch == '~' || ch == '.') {
-        result.append(ch)
-      }
-      else if (ch == '/') {
-        val x = if(encodeSlash) "%2F" else ch
-        result.append(x)
-      }
-      else {
-        result.append("%" + toHex(Array(ch.toByte)).toUpperCase)
-      }
-    }
-    return result.toString
+  def uriEncode(input: String, isParameter: Boolean): String = {
+    SdkHttpUtils.urlEncode(input, !isParameter)
   }
 
 }
