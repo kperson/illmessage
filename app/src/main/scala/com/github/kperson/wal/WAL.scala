@@ -49,7 +49,8 @@ class WAL(client: DynamoClient, walTable: String) {
       "partitionKey = :partitionKey",
       expressionAttributeValues = Map(":partitionKey" -> partitionKey),
       lastEvaluatedKey = lastEvaluatedKey,
-      limit = 300
+      limit = 300,
+      consistentRead = true
     )
     f.flatMap { records =>
       val newBase = base ++ records.results
