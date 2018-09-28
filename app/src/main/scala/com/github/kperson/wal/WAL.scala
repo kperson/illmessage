@@ -24,16 +24,20 @@ class WAL(client: DynamoClient, walTable: String) {
 
   private val partitionKey = "wal_partition_key"
   private val maxWriteScheduleDelay = 6.seconds
+  private var writeNum = 0
 
   import client.ec
 
+
   def write(messages: List[Message]): Future[List[String]] = {
+    writeNum = if(writeNum == 99999) 0 else writeNum + 1
     val batchId = UUID.randomUUID().toString.replace("-", "")
     val listWithIndex = messages.zip(0L until messages.size.toLong)
     val transactionGroups = listWithIndex.map { case (message, index) =>
-      val timestamp = "%016d".format(System.currentTimeMillis())
+      val timestamp = "%014d".format(System.currentTimeMillis())
       val insertNum = "%09d".format(index)
-      WALRecord(message, batchId, partitionKey, s"$timestamp-$insertNum-$batchId")
+      val writeNumFormat =  "%05d".format(writeNum)
+      WALRecord(message, batchId, partitionKey, s"$timestamp-$writeNumFormat-$insertNum-$batchId")
     }.grouped(25).toList
     Future.sequence(transactionGroups.map { writeWALRecords(_) })
     .map { _ =>
@@ -55,11 +59,11 @@ class WAL(client: DynamoClient, walTable: String) {
     )
     f.flatMap { records =>
       val newBase = base ++ records.results
-      if(records.results.isEmpty || lastEvaluatedKey.isEmpty) {
+      if(records.results.isEmpty || records.lastEvaluatedKey.isEmpty) {
         Future.successful(newBase)
       }
       else {
-        load(newBase, lastEvaluatedKey)
+        load(newBase, records.lastEvaluatedKey)
       }
     }
   }
@@ -76,7 +80,7 @@ class WAL(client: DynamoClient, walTable: String) {
 
   private def writeWALRecords(records: List[WALRecord], delay: FiniteDuration = 200.milliseconds, allowedIterations: Int = 15): Future[Any] = {
     client.batchPutItems(walTable, records).flatMap {
-      case rs if rs.unprocessedItems.nonEmpty =>
+      case rs if rs.unprocessedInserts.nonEmpty =>
         if(allowedIterations > 1) {
           //exponential backoff
           val nextDelay = if (delay * 2 > maxWriteScheduleDelay) maxWriteScheduleDelay else delay * 2
@@ -84,7 +88,7 @@ class WAL(client: DynamoClient, walTable: String) {
           val p = Promise[Any]()
           timer.schedule(new TimerTask {
             def run() {
-              val f = writeWALRecords(rs.unprocessedItems, nextDelay, allowedIterations = allowedIterations - 1)
+              val f = writeWALRecords(rs.unprocessedInserts, nextDelay, allowedIterations = allowedIterations - 1)
               f.onComplete { p.complete }
             }
           }, delay.toMillis)

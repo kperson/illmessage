@@ -23,11 +23,3 @@ case class Subscription(
   }
 
 }
-
-case class DeadLetterMessage(
-  id: String,
-  subscription: Subscription,
-  message: Message,
-  reason: String,
-  ttl: Long
-)

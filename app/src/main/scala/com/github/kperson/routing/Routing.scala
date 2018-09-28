@@ -18,7 +18,7 @@ object Routing {
     }
   }
 
-  def handle(dao: DAO, messages: List[Message]): Future[Any] = {
+  def handle(dao: DAO, messages: List[Message]): Future[Unit] = {
     //fetch all the subscriptions
     dao.fetchSubscriptions.flatMap { subscriptions =>
       serializeFutures(messages) { message =>
@@ -27,20 +27,9 @@ object Routing {
          TopicMatching.matchesTopicBinding(subscription.bindingKey, message.routingKey)
         }
         //attempt to deliver messages
-        val resultsFuture = Future.sequence (
+        Future.sequence (
           matchSubscriptions.map { dao.deliverMessage(message, _) }
-        )
-
-        //deliver the dead letter messages
-        resultsFuture.map { results =>
-          results.collect {
-            case Right(deadLetter) => deadLetter
-          }
-        }.map { deadMessages =>
-          Future.sequence(
-            deadMessages.map { dao.saveDeadLetterMessage }
-          )
-        }
+        ).map { _ => Unit }
       }
     }
   }

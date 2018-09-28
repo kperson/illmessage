@@ -18,15 +18,13 @@ import DynamoSerialization._
 
 
 case class DynamoPagedResults[A](results: List[A], lastEvaluatedKey: Option[Map[String, Any]])
-case class BatchInsertResults[A](unprocessedItems: List[A])
+case class BatchWriteResults[A](unprocessedInserts: List[A], unprocessedDeletes: List[Map[String, Any]])
 
 
 class DynamoClient(
   region: String,
   credentialsProvider: AWSCredentialsProvider = Credentials.defaultCredentialsProvider
 ) (implicit val ec: ExecutionContext) {
-
-
 
   private val defaultFormats = Serialization.formats(NoTypeHints)
 
@@ -53,10 +51,10 @@ class DynamoClient(
     request(payload, "DynamoDB_20120810.PutItem").run()
   }
 
-  def batchPutItems[A <: AnyRef](table: String, items: List[A], convertFromSnakeCase: Boolean = false)(implicit formats: Formats, mf: Manifest[A]): Future[BatchInsertResults[A]] = {
-    require(items.length <= 25, "you may only enter 25 items per batch")
+  def batchPutItems[A <: AnyRef](table: String, items: List[A], convertFromSnakeCase: Boolean = false)(implicit formats: Formats, mf: Manifest[A]): Future[BatchWriteResults[A]] = {
+    require(items.size <= 25, "you may only enter 25 items per batch")
     if(items.isEmpty) {
-      Future.successful(BatchInsertResults(List.empty))
+      Future.successful(BatchWriteResults(List.empty, List.empty))
     }
     else {
       val dynamoItems = items.map { item =>
@@ -86,7 +84,40 @@ class DynamoClient(
             read[A](itemJSON)(formats, mf)
           }
         }
-        BatchInsertResults(uis)
+        BatchWriteResults(uis, List.empty)
+      }
+    }
+  }
+
+  def batchDeleteItems(table: String, keys: List[Map[String, Any]]): Future[BatchWriteResults[Map[String, Any]]] = {
+    implicit val formats = Serialization.formats(NoTypeHints)
+    require(keys.size <= 25, "you may only delete 25 items per batch")
+    if(keys.isEmpty) {
+      Future.successful(BatchWriteResults(List.empty, List.empty))
+    }
+    else {
+      val dynamoItems = keys.map { item =>
+        val jsonItem = write(item)
+        val dynamoItem = parse(jsonItem).rawToDynamo.get.asInstanceOf[DynamoMap]
+        Map("DeleteRequest" -> Map("Key" -> dynamoItem.asDynamo("M")))
+      }
+      val bodyParams = Map(
+        "RequestItems" -> Map(
+          table -> dynamoItems
+        )
+      )
+      val payload = write(bodyParams).getBytes(StandardCharsets.UTF_8)
+      request(payload, "DynamoDB_20120810.BatchWriteItem").run().map { res =>
+        val m = read[Map[String, Any]](new String(res.body, StandardCharsets.UTF_8))
+        val unprocessedItems = m("UnprocessedItems").asInstanceOf[Map[String, List[Map[String, Map[String, Map[String, Any]]]]]]
+        val missingItems = unprocessedItems.getOrElse(table, List.empty).map { _("PutRequest")("Item") }
+        val uis = missingItems.map { item =>
+          val itemDynamoJSON = parse(write(Map("M" -> item)))
+          val itemDynamoMap = DynamoMap(DynamoMap.unapply(itemDynamoJSON).get)
+          val itemJSON = write(itemDynamoMap.flatten)
+          read[Map[String, Any]](itemJSON)
+        }
+        BatchWriteResults(List.empty, uis)
       }
     }
   }
