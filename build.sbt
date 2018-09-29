@@ -14,7 +14,7 @@ lazy val commonSettings = Seq(
 lazy val app = (project in file("app")).
   settings(commonSettings: _*).
   settings(
-    fork in run := true
+   fork in run := true
   ).
   settings(libraryDependencies ++= Seq (
     "com.amazonaws"           % "aws-lambda-java-events"       % "2.2.2",
@@ -25,6 +25,7 @@ lazy val app = (project in file("app")).
     "org.asynchttpclient"     %  "async-http-client"           % "2.5.3",
     "org.scala-lang.modules"  %% "scala-xml"                   % "1.1.0",
     "com.typesafe.akka"       %% "akka-stream"                 % akkaStreamVersion,
+    "com.typesafe.akka"       %% "akka-http"                   % "10.1.5",
     "org.scalatest"           %% "scalatest"                   % scalaTestVersion         % "test",
     "org.scalamock"           %% "scalamock-scalatest-support" % scalaMockSupportVersion  % "test",
     "com.typesafe.akka"       %% "akka-stream-testkit"         % "2.5.16"                 % "test"

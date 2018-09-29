@@ -8,7 +8,7 @@ import com.github.kperson.routing.Multiplex._
 
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
-import com.github.kperson.model.{Subscription => MessageSubscription}
+import com.github.kperson.model.MessageSubscription
 
 import scala.concurrent.stm.{atomic, Ref}
 

@@ -1,7 +1,7 @@
 package com.github.kperson.routing
 
 import com.github.kperson.dao.DAO
-import com.github.kperson.model.{DeadLetterMessage, Message, Subscription}
+import com.github.kperson.model.{DeadLetterMessage, Message, MessageSubscription}
 
 import org.scalamock.scalatest.MockFactory
 
@@ -16,7 +16,7 @@ class RoutingSpec extends FlatSpec with Matchers with MockFactory {
   "Routing" should "deliver messages" in {
     val messageOne = Message("abc.123", "b1", "e1")
     val messageTwo = Message("abc.321", "b2", "e1")
-    val subscription = Subscription("e1", "abc.*", "q1", "2323232")
+    val subscription = MessageSubscription("e1", "abc.*", "q1", "2323232")
 
     val dao = stub[DAO]
     (dao.fetchSubscriptions _).when().returns(Future.successful(Map("e1" -> List(subscription))))
@@ -30,7 +30,7 @@ class RoutingSpec extends FlatSpec with Matchers with MockFactory {
   it should "save dead letter messages" in {
     val messageOne = Message("abc.123", "b1", "e1")
     val messageTwo = Message("abc.321", "b2", "e1")
-    val subscription = Subscription("e1", "abc.*", "q1", "2323232")
+    val subscription = MessageSubscription("e1", "abc.*", "q1", "2323232")
     val deadLetterMessage = DeadLetterMessage("id1", subscription, messageTwo, "reason", 10L)
 
     val dao = stub[DAO]
@@ -46,7 +46,7 @@ class RoutingSpec extends FlatSpec with Matchers with MockFactory {
   it should "reject mismatched keys" in {
     val messageOne = Message("abc.123", "b1", "e1")
     val messageTwo = Message("w", "b2", "e1")
-    val subscription = Subscription("e1", "abc.*", "q1", "2323232")
+    val subscription = MessageSubscription("e1", "abc.*", "q1", "2323232")
 
     val dao = mock[DAO]
     (dao.deliverMessage _).expects(messageOne, subscription).returning(Future.successful(Left(true)))
@@ -58,7 +58,7 @@ class RoutingSpec extends FlatSpec with Matchers with MockFactory {
 
   it should "not publish to other exchanges" in {
     val messageOne = Message("abc.123", "b1", "e2")
-    val subscription = Subscription("e1", "abc.*", "q1", "2323232")
+    val subscription = MessageSubscription("e1", "abc.*", "q1", "2323232")
 
     val dao = stub[DAO]
     (dao.fetchSubscriptions _).when().returns(Future.successful(Map("e1" -> List(subscription))))

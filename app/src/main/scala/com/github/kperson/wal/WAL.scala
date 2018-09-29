@@ -3,8 +3,7 @@ package com.github.kperson.wal
 import java.util.{Timer, TimerTask, UUID}
 
 import com.github.kperson.aws.dynamo.DynamoClient
-import com.github.kperson.model.Message
-
+import com.github.kperson.model.{Message, MessageSubscription}
 import org.json4s.{Formats, NoTypeHints}
 import org.json4s.jackson.Serialization
 
@@ -15,14 +14,14 @@ case class WALRecord(
   message: Message,
   batchId: String,
   partitionKey: String,
-  messageId: String
+  messageId: String,
+  preComputedSubscription: Option[MessageSubscription] = None
 )
 
 class WAL(client: DynamoClient, walTable: String) {
 
   implicit val defaultFormats: Formats = Serialization.formats(NoTypeHints)
 
-  private val partitionKey = "wal_partition_key"
   private val maxWriteScheduleDelay = 6.seconds
   private var writeNum = 0
 
@@ -30,14 +29,18 @@ class WAL(client: DynamoClient, walTable: String) {
 
 
   def write(messages: List[Message]): Future[List[String]] = {
-    writeNum = if(writeNum == 99999) 0 else writeNum + 1
+    writeWithSubscription(messages.map { (_, None) })
+  }
+
+  def writeWithSubscription(messagesSubscriptions: List[(Message, Option[MessageSubscription])]): Future[List[String]] = {
+    writeNum = if(writeNum == 9999999) 0 else writeNum + 1
     val batchId = UUID.randomUUID().toString.replace("-", "")
-    val listWithIndex = messages.zip(0L until messages.size.toLong)
-    val transactionGroups = listWithIndex.map { case (message, index) =>
+    val listWithIndex = messagesSubscriptions.zip(0L until messagesSubscriptions.size.toLong)
+    val transactionGroups = listWithIndex.map { case ((message, subscriptions), index) =>
       val timestamp = "%014d".format(System.currentTimeMillis())
       val insertNum = "%09d".format(index)
-      val writeNumFormat =  "%05d".format(writeNum)
-      WALRecord(message, batchId, partitionKey, s"$timestamp-$writeNumFormat-$insertNum-$batchId")
+      val writeNumFormat =  "%07d".format(writeNum)
+      WALRecord(message, batchId, WAL.partitionKey, s"$timestamp-$writeNumFormat-$insertNum-$batchId", subscriptions)
     }.grouped(25).toList
     Future.sequence(transactionGroups.map { writeWALRecords(_) })
     .map { _ =>
@@ -52,18 +55,16 @@ class WAL(client: DynamoClient, walTable: String) {
     val f = client.query[WALRecord](
       walTable,
       "partitionKey = :partitionKey",
-      expressionAttributeValues = Map(":partitionKey" -> partitionKey),
+      expressionAttributeValues = Map(":partitionKey" -> WAL.partitionKey),
       lastEvaluatedKey = lastEvaluatedKey,
       limit = 300,
       consistentRead = true
     )
     f.flatMap { records =>
       val newBase = base ++ records.results
-      if(records.results.isEmpty || records.lastEvaluatedKey.isEmpty) {
-        Future.successful(newBase)
-      }
-      else {
-        load(newBase, records.lastEvaluatedKey)
+      records.lastEvaluatedKey match {
+        case key @ Some(_) => load(newBase, key)
+        case _ => Future.successful(newBase)
       }
     }
   }
@@ -72,7 +73,7 @@ class WAL(client: DynamoClient, walTable: String) {
     client.deleteItem[WALRecord](
       walTable,
       Map(
-        "partitionKey" -> partitionKey,
+        "partitionKey" -> WAL.partitionKey,
         "messageId" -> messageId
       )
     )
@@ -106,5 +107,12 @@ class WAL(client: DynamoClient, walTable: String) {
       case _ => Future.successful(true)
     }
   }
+
+}
+
+object WAL {
+
+  val partitionKey = "wal_partition_key"
+
 
 }

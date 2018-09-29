@@ -1,7 +1,11 @@
 package com.github.kperson.deadletter
 
+import java.util.UUID
+
 import com.github.kperson.aws.dynamo.DynamoClient
-import com.github.kperson.model.{Message, Subscription}
+import com.github.kperson.model.{Message, MessageSubscription}
+import com.github.kperson.wal.WAL
+
 import org.json4s.{Formats, NoTypeHints}
 import org.json4s.jackson.Serialization
 
@@ -10,15 +14,15 @@ import scala.util.Success
 
 
 case class DeadLetterMessage(
-  subscriptionId: String,
-  subscription: Subscription,
-  messageId: String,
-  message: Message,
-  insertedAt: Long,
-  ttl: Long
+                              subscriptionId: String,
+                              subscription: MessageSubscription,
+                              messageId: String,
+                              message: Message,
+                              insertedAt: Long,
+                              ttl: Long
 )
 
-class DeadLetterQueue(client: DynamoClient, table: String) {
+class DeadLetterQueue(client: DynamoClient, table: String, wal: WAL) {
 
   implicit val defaultFormats: Formats = Serialization.formats(NoTypeHints)
 
@@ -28,12 +32,14 @@ class DeadLetterQueue(client: DynamoClient, table: String) {
     client.putItem(table, message)
   }
 
-  def loadAndRemove(
-    base: List[DeadLetterMessage] = List.empty,
-    subscription: Subscription,
-    lastEvaluatedKey: Option[Map[String, Any]] = None,
-    currentTime: Option[Long] = None
-  ): Future[List[DeadLetterMessage]] = {
+  def loadToWAL(
+                 subscription: MessageSubscription,
+                 base: List[(String, Message)] = List.empty,
+                 lastEvaluatedKey: Option[Map[String, Any]] = None,
+                 currentTime: Option[Long] = None,
+                 batchId: Option[String] = None
+  ): Future[List[(String, Message)]] = {
+    val bId = batchId.getOrElse(UUID.randomUUID().toString.replace("-", ""))
     val t = currentTime.getOrElse(System.currentTimeMillis)
     val f = client.query[DeadLetterMessage](
       table,
@@ -44,16 +50,27 @@ class DeadLetterQueue(client: DynamoClient, table: String) {
       limit = 300,
       consistentRead = true
     )
-    f.andThen { case Success(records) =>
-      val keysToDelete = records.results.map { r => Map("subscriptionId" -> r.subscriptionId, "messageId" -> r.messageId) }
-      deleteKeys(keysToDelete)
-    }.flatMap { records =>
-      val newBase = base ++ records.results
-      if(records.results.isEmpty || records.lastEvaluatedKey.isEmpty) {
-        Future.successful(newBase)
+    f.flatMap { records =>
+      val messageSubscriptionsGroups = records.results.map { r =>
+        (r.message, r.subscription, r.messageId)
+      }.grouped(25)
+      val transfers = messageSubscriptionsGroups.toList.map { group =>
+        val walInsert = group.map { case (m, s, _) => (m, Some(s)) }
+        //move the records to wal
+        wal.writeWithSubscription(walInsert)
+        .andThen { case Success(_) =>
+          //delete the records from the dead letter queue
+          deleteKeys(group.map { case (_, s, mId) => Map("subscriptionId" -> s.id, "messageId" -> mId) })
+        }
       }
-      else {
-        loadAndRemove(newBase, subscription, records.lastEvaluatedKey, Some(t))
+      Future.sequence(transfers).map { groupedTransfers =>
+        groupedTransfers.flatten.zip(records.results.map(_.message))
+      }.map {  (_, records.lastEvaluatedKey) }
+    }.flatMap { case (records, lek) =>
+      val newBase = base ++ records
+      lek match {
+        case key @ Some(_) => loadToWAL(subscription, newBase, key, Some(t), Some(bId))
+        case _ => Future.successful(newBase)
       }
     }
   }

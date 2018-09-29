@@ -2,7 +2,7 @@ package com.github.kperson.routing
 
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.testkit.scaladsl.TestSink
-import com.github.kperson.model.{Message, Subscription}
+import com.github.kperson.model.{Message, MessageSubscription}
 import com.github.kperson.util.AkkaContext
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FlatSpec, Matchers}
@@ -13,8 +13,8 @@ import scala.concurrent.Await
 
 class MultiplexSpec extends FlatSpec with Matchers with AkkaContext with MockFactory {
 
-  val subscriptionOne = Subscription("e1", "abc.*", "q1", "23232328")
-  val subscriptionTwo = Subscription("e1", "abc.*", "q2", "23232327")
+  val subscriptionOne = MessageSubscription("e1", "abc.*", "q1", "23232328")
+  val subscriptionTwo = MessageSubscription("e1", "abc.*", "q2", "23232327")
   val messageOne = Message("abc.123", "b1", "e1")
   val messageTwo = Message("abc.321", "b2", "e1")
 

@@ -1,18 +1,17 @@
-package com.github.kperson.api
-
-import com.amazonaws.services.lambda.runtime.{Context, RequestStreamHandler}
+package com.github.kperson.aws.lambda
 
 import java.io.{ByteArrayInputStream, InputStream, OutputStream}
 import java.nio.charset.StandardCharsets
 
+import com.amazonaws.services.lambda.runtime.{Context, RequestStreamHandler}
 import org.json4s.NoTypeHints
 import org.json4s.jackson.Serialization
-import org.json4s.jackson.Serialization.write
 import org.json4s.jackson.JsonMethods._
+import org.json4s.jackson.Serialization.write
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.Map
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Try}
 
 

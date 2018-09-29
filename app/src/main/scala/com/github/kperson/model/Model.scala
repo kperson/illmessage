@@ -6,7 +6,7 @@ case class Message(
  exchange: String
 )
 
-case class Subscription(
+case class MessageSubscription(
   exchange: String,
   bindingKey: String,
   queue: String,
