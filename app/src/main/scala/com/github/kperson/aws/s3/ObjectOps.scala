@@ -64,7 +64,7 @@ trait ObjectOps {
       "Content-Type" -> contentType,
       "x-amz-storage-class" -> storageClassHeaderValue
     )
-    request("PUT", path, headers = requestHeaders).run()
+    request("PUT", path, headers = requestHeaders, payload = value).run()
   }
 
   /**

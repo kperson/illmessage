@@ -24,6 +24,7 @@ class S3Client(
       "s3",
       region,
       s"https://s3.amazonaws.com",
+      path = path,
       method = method,
       headers = headers,
       payload = payload,
