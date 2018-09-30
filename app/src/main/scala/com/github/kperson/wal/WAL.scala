@@ -4,11 +4,27 @@ import java.util.{Timer, TimerTask, UUID}
 
 import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.model.{Message, MessageSubscription}
-import org.json4s.{Formats, NoTypeHints}
-import org.json4s.jackson.Serialization
+import com.github.kperson.serialization.JSONFormats
+import org.json4s.Formats
 
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
+
+class WALTransferMessage(
+  val message: Message,
+  val mId: String,
+  val ttl: Long = System.currentTimeMillis + 5.minutes.toMillis
+) extends Transfer {
+
+  val messageId = Some(mId)
+  
+  val messages = List(message)
+
+  def onTransfer() {
+  }
+  def preComputedSubscription = None
+
+}
 
 case class WALRecord(
   message: Message,
@@ -20,7 +36,7 @@ case class WALRecord(
 
 class WAL(client: DynamoClient, walTable: String) {
 
-  implicit val defaultFormats: Formats = Serialization.formats(NoTypeHints)
+  implicit val defaultFormats: Formats = JSONFormats.formats
 
   private val maxWriteScheduleDelay = 6.seconds
   private var writeNum = 0

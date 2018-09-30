@@ -7,11 +7,13 @@ import akka.http.scaladsl.server.Directives._
 
 import com.github.kperson.dao.SubscriptionDAO
 import com.github.kperson.serialization.JSONFormats
+import com.github.kperson.wal.WALTransfer
 
 import org.json4s.Formats
 
 
 class API(
+  val walTransfer: WALTransfer,
   val subscriptionDAO: SubscriptionDAO
 )(implicit fm: Materializer, system: ActorSystem)
 extends MessageAPI

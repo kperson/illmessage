@@ -2,14 +2,12 @@ package com.github.kperson.routing
 
 import akka.NotUsed
 import akka.stream.scaladsl.{Flow, Sink, Source}
-
 import com.github.kperson.model.Message
 import com.github.kperson.routing.Multiplex._
-
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
-
 import com.github.kperson.model.MessageSubscription
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.stm.{atomic, Ref}
 
 
@@ -19,7 +17,7 @@ case class MessageSubscriptions[C](message: Message, subscriptions: List[Message
 
 trait ACKCallback[C] {
 
-  def ack(messageId: String, context: C)
+  def ack(messageId: String, context: C): Future[Any]
 
 }
 
@@ -32,7 +30,7 @@ object Multiplex {
 
   def flow[C](
     ackCallback: ACKCallback[C]
- ): (Flow[MessageSubscriptions[C], MessagePayload[C], NotUsed], (String, String) => Unit) = {
+ )(implicit ec: ExecutionContext): (Flow[MessageSubscriptions[C], MessagePayload[C], NotUsed], (String, String) => Unit) = {
     val multi = new Multiplex[C](ackCallback)
     (Flow.fromSinkAndSource(Sink.fromSubscriber(multi), Source.fromPublisher(multi)), multi.onMessageSent)
   }
@@ -40,7 +38,7 @@ object Multiplex {
 }
 
 
-class Multiplex[C](ackCallback: ACKCallback[C]) extends Subscriber[MessageSubscriptions[C]] with Publisher[MessagePayload[C]] {
+class Multiplex[C](ackCallback: ACKCallback[C])(implicit ec: ExecutionContext) extends Subscriber[MessageSubscriptions[C]] with Publisher[MessagePayload[C]] {
 
   //PUBLISHER
   private var downStreamSubscription: Option[MultiplexSubscription[C]] = None
@@ -103,7 +101,7 @@ class MultiplexSubscription[C](
   upstreamSubscription: Subscription,
   downstreamSubscriber: Subscriber[_ >: MessagePayload[C]],
   ackCallback: ACKCallback[C],
-) extends Subscription {
+)(implicit ec: ExecutionContext) extends Subscription {
 
   val downstreamDemand = Ref(0L)
   val queuedForSendCount = Ref(0L)
@@ -257,10 +255,16 @@ class MultiplexSubscription[C](
       (ackRequired, completedMessageContext)
     }
     if(ackRequired) {
-      ackCallback.ack(messageId, context)
+      val f = ackCallback.ack(messageId, context)
+      f.foreach { _ =>
+        checkCompletion()
+        deliveryRequested()
+      }
     }
-    checkCompletion()
-    deliveryRequested()
+    else {
+      checkCompletion()
+      deliveryRequested()
+    }
   }
 
 

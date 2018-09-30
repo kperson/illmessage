@@ -27,6 +27,10 @@ class AmazonSubscriptionDAO(bucket: String, s3Client: S3Client)(implicit ec: Exe
     Future.successful(subscriptions.single.get.get(subscriptionId))
   }
 
+  def fetchAllSubscriptions(): Future[List[MessageSubscription]] = {
+    Future.successful(subscriptions.single.get.values.toList)
+  }
+
   def delete(subscriptionId: String): Future[Option[MessageSubscription]] = {
     val (newSubscriptions, removed) = atomic { implicit tx =>
       subscriptions.transformAndExtract { old =>

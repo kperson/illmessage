@@ -12,4 +12,6 @@ trait SubscriptionDAO {
 
   def delete(subscriptionId: String): Future[Option[MessageSubscription]]
 
+  def fetchAllSubscriptions(): Future[List[MessageSubscription]]
+
 }
