@@ -13,16 +13,16 @@ import scala.concurrent.duration._
 class WALTransferMessage(
   val message: Message,
   val mId: String,
+  val preComputedSubscription: Option[MessageSubscription],
   val ttl: Long = System.currentTimeMillis + 5.minutes.toMillis
 ) extends Transfer {
 
   val messageId = Some(mId)
-  
+
   val messages = List(message)
 
   def onTransfer() {
   }
-  def preComputedSubscription = None
 
 }
 

@@ -24,12 +24,12 @@ object Main extends App {
 
     val (orderingFlow, onMessageSent) = Multiplex.flow(new MessageACK(wal))
 
-
     val walMessages = wal.load().map { messages =>
       messages.map {  m =>
         new WALTransferMessage(
           m.message,
-          m.messageId
+          m.messageId,
+          m.preComputedSubscription
         )
       }
     }
@@ -46,11 +46,15 @@ object Main extends App {
       httpAdapter.run()
     }
 
+    walMessages.failed.foreach { case ex =>
+      ex.printStackTrace()
+      sys.exit(1)
+    }
+
   }
 
   catch {
     case ex: Throwable =>
-      println(ex)
       ex.printStackTrace()
       sys.exit(1)
   }

@@ -73,9 +73,10 @@ class WALTransfer(
     }
     item match {
       case Some(i) =>
-        (i.preComputedSubscription, i.messageId) match {
-          case (Some(sub), Some(mId)) if i.messages.length == 1 =>
-            val payload: WALTransfer.WALOutPayload = (Some(sub), List((i.messages.head, mId)))
+        i.messageId match {
+          case  Some(mId) =>
+            val messages = i.messages.map { (_, mId) }
+            val payload: WALTransfer.WALOutPayload = (i.preComputedSubscription, messages)
             subscriber.foreach { _.onNext(payload) }
             i.onTransfer()
             deliver()
