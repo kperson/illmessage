@@ -4,9 +4,11 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import akka.http.scaladsl.server.Directives._
+
 import com.github.kperson.dao.SubscriptionDAO
-import org.json4s.{Formats, NoTypeHints}
-import org.json4s.jackson.Serialization
+import com.github.kperson.serialization.JSONFormats
+
+import org.json4s.Formats
 
 
 class API(
@@ -15,7 +17,7 @@ class API(
 extends MessageAPI
 with SubscriptionAPI {
 
-  lazy val jsonFormats: Formats = Serialization.formats(NoTypeHints)
+  lazy val jsonFormats: Formats = JSONFormats.formats
   val route = messageRoute ~ subscriptionRoute
 
   def run(interface: String = "0.0.0.0", port: Int = 8080) {

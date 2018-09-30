@@ -14,13 +14,14 @@ import scala.util.Success
 
 
 case class DeadLetterMessage(
-                              subscriptionId: String,
-                              subscription: MessageSubscription,
-                              messageId: String,
-                              message: Message,
-                              insertedAt: Long,
-                              ttl: Long
-)
+  subscription: MessageSubscription,
+  messageId: String,
+  message: Message,
+  insertedAt: Long,
+  ttl: Long
+) {
+  def subscriptionId: String = subscription.id
+}
 
 class DeadLetterQueue(client: DynamoClient, table: String, wal: WAL) {
 
