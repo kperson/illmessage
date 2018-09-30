@@ -2,6 +2,7 @@ package com.github.kperson.routing
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import com.github.kperson.api.API
 import com.github.kperson.aws.s3.S3Client
 import com.github.kperson.dao.AmazonSubscriptionDAO
 import com.github.kperson.model.MessageSubscription
@@ -18,11 +19,9 @@ object Main extends App {
   try {
 
     val s3Client = new S3Client("us-east-1")
-    val subscriptionDAO = new AmazonSubscriptionDAO("TODO", s3Client)
-    val ms = MessageSubscription("e1", "b1", "q1", "a1")
-    val f = subscriptionDAO.save(ms)
-    Await.result(f, 5.seconds)
-    sys.exit(0)
+    val subscriptionDAO = new AmazonSubscriptionDAO("vidicast.subscription", s3Client)
+    val api = new API(subscriptionDAO)
+    api.run()
   }
   catch {
     case ex: Throwable =>
@@ -33,7 +32,6 @@ object Main extends App {
 
 
 
-  //val api = new API()
-  //api.run()
+
 
 }

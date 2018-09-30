@@ -16,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.Manifest
 
 
-class JSONUnmarshaller[T](implicit formats: Formats, mf: Manifest[T]) extends FromRequestUnmarshaller[T] {
+private class JSONUnmarshaller[T](implicit formats: Formats, mf: Manifest[T]) extends FromRequestUnmarshaller[T] {
   def apply(value: HttpRequest)(implicit ec: ExecutionContext, materializer: Materializer): Future[T] = {
     val buffer = ArrayBuffer[Byte]()
 
