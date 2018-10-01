@@ -14,8 +14,9 @@ class DeadLetterMessageSerializer extends CustomSerializer[DeadLetterMessage](fo
       val insertedAt = (json \ "insertedAt").extract[Long]
       val ttl = (json \ "ttl").extract[Long]
       val message = (json \ "message").extract[Message]
+      val reason = (json \ "reason").extract[String]
       val subscription = (json \ "subscription").extract[MessageSubscription]
-      DeadLetterMessage(subscription, messageId, message, insertedAt, ttl)
+      DeadLetterMessage(subscription, messageId, message, insertedAt, ttl, reason)
   },
   {
     case dlm: DeadLetterMessage =>
@@ -26,6 +27,7 @@ class DeadLetterMessageSerializer extends CustomSerializer[DeadLetterMessage](fo
         JField("subscriptionId", JString(dlm.subscription.id)) ::
         JField("message", Extraction.decompose(dlm.message)(format)) ::
         JField("subscription", Extraction.decompose(dlm.subscription)(format)) ::
+        JField("reason", JString(dlm.reason)) ::
         Nil
       )
   }

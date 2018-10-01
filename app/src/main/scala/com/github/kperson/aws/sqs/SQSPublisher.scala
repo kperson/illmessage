@@ -9,10 +9,10 @@ import scala.concurrent.stm.Ref
 case class BackOffStrategy(initialTimeout: FiniteDuration, maxTimeout: FiniteDuration)
 
 class SQSPublisher(
-  client: SQSQueueClient,
-  queueName: String,
-  autoDelete: Boolean = false,
-  backOffStrategy: Option[BackOffStrategy] = None
+                    client: SQSClient,
+                    queueName: String,
+                    autoDelete: Boolean = false,
+                    backOffStrategy: Option[BackOffStrategy] = None
 ) extends Publisher[SNSMessage[String]]  {
 
   val subscribers = Ref(Set[Subscriber[_ >: SNSMessage[String]]]())

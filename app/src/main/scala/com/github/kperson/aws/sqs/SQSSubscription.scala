@@ -10,11 +10,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 
 class SQSSubscription(
- subscriber: Subscriber[_ >: SNSMessage[String]],
- queueClient: SQSQueueClient,
- queueName: String,
- autoDelete: Boolean = false,
- backOffStrategy: Option[BackOffStrategy] = None
+                       subscriber: Subscriber[_ >: SNSMessage[String]],
+                       queueClient: SQSClient,
+                       queueName: String,
+                       autoDelete: Boolean = false,
+                       backOffStrategy: Option[BackOffStrategy] = None
 ) extends Subscription {
 
   val demand = Ref(0L)

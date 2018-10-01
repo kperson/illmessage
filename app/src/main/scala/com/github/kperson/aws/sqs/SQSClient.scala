@@ -19,7 +19,7 @@ case class SNSMessage[T](id: String, receiptHandle: String, body: T, attributes:
 
 }
 
-class SQSQueueClient(
+class SQSClient(
   region: String,
   accountId: String,
   credentialsProvider: AWSCredentialsProvider = Credentials.defaultCredentialsProvider
@@ -72,7 +72,8 @@ class SQSQueueClient(
     messageBody: String,
     delay: FiniteDuration = 0.seconds,
     messageDeduplicationId: Option[String] = None,
-    messageGroupId: Option[String] = None
+    messageGroupId: Option[String] = None,
+    messageAccountId: Option[String] = None
   ): Future[Any] = {
     val baseParams = Map(
       "DelaySeconds" -> Some(delay.toSeconds.toString),
@@ -83,7 +84,7 @@ class SQSQueueClient(
     ).collect {
       case (k, Some(v)) => (k, v)
     }
-    createRequest("POST",  s"$accountId/$queueName/", baseParams).run()
+    createRequest("POST",  s"${messageAccountId.getOrElse(accountId)}/$queueName/", baseParams).run()
   }
 
   def fetchMessages (

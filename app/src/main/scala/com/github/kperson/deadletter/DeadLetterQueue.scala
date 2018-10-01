@@ -4,10 +4,10 @@ import java.util.UUID
 
 import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.model.{Message, MessageSubscription}
+import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.wal.WAL
 
-import org.json4s.{Formats, NoTypeHints}
-import org.json4s.jackson.Serialization
+import org.json4s.Formats
 
 import scala.concurrent.Future
 import scala.util.Success
@@ -18,14 +18,16 @@ case class DeadLetterMessage(
   messageId: String,
   message: Message,
   insertedAt: Long,
-  ttl: Long
+  ttl: Long,
+  reason: String
+
 ) {
   def subscriptionId: String = subscription.id
 }
 
 class DeadLetterQueue(client: DynamoClient, table: String, wal: WAL) {
 
-  implicit val defaultFormats: Formats = Serialization.formats(NoTypeHints)
+  implicit val defaultFormats: Formats = JSONFormats.formats
 
   import client.ec
 
@@ -34,11 +36,11 @@ class DeadLetterQueue(client: DynamoClient, table: String, wal: WAL) {
   }
 
   def loadToWAL(
-                 subscription: MessageSubscription,
-                 base: List[(String, Message)] = List.empty,
-                 lastEvaluatedKey: Option[Map[String, Any]] = None,
-                 currentTime: Option[Long] = None,
-                 batchId: Option[String] = None
+    subscription: MessageSubscription,
+    base: List[(String, Message)] = List.empty,
+    lastEvaluatedKey: Option[Map[String, Any]] = None,
+    currentTime: Option[Long] = None,
+    batchId: Option[String] = None
   ): Future[List[(String, Message)]] = {
     val bId = batchId.getOrElse(UUID.randomUUID().toString.replace("-", ""))
     val t = currentTime.getOrElse(System.currentTimeMillis)

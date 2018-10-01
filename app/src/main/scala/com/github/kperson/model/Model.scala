@@ -1,10 +1,13 @@
 package com.github.kperson.model
 
 case class Message(
- routingKey: String,
- body: String,
- exchange: String
-)
+  routingKey: String,
+  body: String,
+  exchange: String,
+  delayInSeconds: Option[Int] = None
+) {
+  require(body.length <= 256 * 1024, "message body must be less than 256 KB")
+}
 
 case class MessageSubscription(
   exchange: String,
