@@ -1,19 +1,16 @@
 package com.github.kperson.aws.dynamo
 
 import com.amazonaws.auth.AWSCredentialsProvider
-
 import com.github.kperson.aws.{AWSHttpResponse, Credentials, HttpRequest}
-
 import java.nio.charset.StandardCharsets
 
-import org.json4s.{Formats, NoTypeHints}
+import org.json4s.{Extraction, Formats, NoTypeHints}
 import org.json4s.jackson.Serialization
 import org.json4s.jackson.Serialization._
 import org.json4s.jackson.JsonMethods._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.Manifest
-
 import DynamoSerialization._
 
 
@@ -30,16 +27,13 @@ class DynamoClient(
 
   private def mapToDynamoMap(map: Map[String, Any]): DynamoMap = {
     val defaultFormats = Serialization.formats(NoTypeHints)
-    val expressionAttributesJSON = parse(write(map)(defaultFormats))
+    val expressionAttributesJSON = Extraction.decompose(map)(defaultFormats)
     expressionAttributesJSON.rawToDynamo.get.asInstanceOf[DynamoMap]
   }
 
   def putItem[A <: AnyRef](table: String, item: A)(implicit formats: Formats): Future[Any] = {
-    //convert your object to JSON using the desired formats
-    val jsonItem = write(item)(formats)
-
     //convert your object from JSON to a dynamo representation
-    val dynamoItem = parse(jsonItem).rawToDynamo.get.asInstanceOf[DynamoMap]
+    val dynamoItem = Extraction.decompose(item)(formats).rawToDynamo.get.asInstanceOf[DynamoMap]
 
     val bodyParams = Map(
       "Item" -> dynamoItem.asDynamo("M"),
@@ -58,8 +52,7 @@ class DynamoClient(
     }
     else {
       val dynamoItems = items.map { item =>
-        val jsonItem = write(item)(formats)
-        val dynamoItem = parse(jsonItem).rawToDynamo.get.asInstanceOf[DynamoMap]
+        val dynamoItem =  Extraction.decompose(item)(formats).rawToDynamo.get.asInstanceOf[DynamoMap]
         Map("PutRequest" -> Map("Item" -> dynamoItem.asDynamo("M")))
       }
       val bodyParams = Map(
@@ -73,15 +66,15 @@ class DynamoClient(
         val unprocessedItems = m("UnprocessedItems").asInstanceOf[Map[String, List[Map[String, Map[String, Map[String, Any]]]]]]
         val missingItems = unprocessedItems.getOrElse(table, List.empty).map { _("PutRequest")("Item") }
         val uis = missingItems.map { item =>
-          val itemDynamoJSON = parse(write(Map("M" -> item))(defaultFormats))
+          val itemDynamoJSON = Extraction.decompose(Map("M" -> item))(defaultFormats)
           val itemDynamoMap = DynamoMap(DynamoMap.unapply(itemDynamoJSON).get)
           if(convertFromSnakeCase) {
-            val itemJSONRaw = write(itemDynamoMap.flatten)(defaultFormats)
-            parse(itemJSONRaw).camelizeKeys.extract[A](formats, mf)
+            val itemJSON = Extraction.decompose(itemDynamoMap.flatten)(defaultFormats)
+            itemJSON.camelizeKeys.extract[A](formats, mf)
           }
           else {
-            val itemJSON = write(itemDynamoMap.flatten)(defaultFormats)
-            read[A](itemJSON)(formats, mf)
+            val itemJSON = Extraction.decompose(itemDynamoMap.flatten)(defaultFormats)
+            itemJSON.extract[A](formats, mf)
           }
         }
         BatchWriteResults(uis, List.empty)
@@ -90,15 +83,14 @@ class DynamoClient(
   }
 
   def batchDeleteItems(table: String, keys: List[Map[String, Any]]): Future[BatchWriteResults[Map[String, Any]]] = {
-    implicit val formats = Serialization.formats(NoTypeHints)
+    implicit val formats: Formats = Serialization.formats(NoTypeHints)
     require(keys.size <= 25, "you may only delete 25 items per batch")
     if(keys.isEmpty) {
       Future.successful(BatchWriteResults(List.empty, List.empty))
     }
     else {
       val dynamoItems = keys.map { item =>
-        val jsonItem = write(item)
-        val dynamoItem = parse(jsonItem).rawToDynamo.get.asInstanceOf[DynamoMap]
+        val dynamoItem = Extraction.decompose(item).rawToDynamo.get.asInstanceOf[DynamoMap]
         Map("DeleteRequest" -> Map("Key" -> dynamoItem.asDynamo("M")))
       }
       val bodyParams = Map(
@@ -112,10 +104,9 @@ class DynamoClient(
         val unprocessedItems = m("UnprocessedItems").asInstanceOf[Map[String, List[Map[String, Map[String, Map[String, Any]]]]]]
         val missingItems = unprocessedItems.getOrElse(table, List.empty).map { _("PutRequest")("Item") }
         val uis = missingItems.map { item =>
-          val itemDynamoJSON = parse(write(Map("M" -> item)))
+          val itemDynamoJSON = Extraction.decompose(Map("M" -> item))
           val itemDynamoMap = DynamoMap(DynamoMap.unapply(itemDynamoJSON).get)
-          val itemJSON = write(itemDynamoMap.flatten)
-          read[Map[String, Any]](itemJSON)
+          itemDynamoMap.flatten
         }
         BatchWriteResults(List.empty, uis)
       }
@@ -128,15 +119,15 @@ class DynamoClient(
 
     val items = m("Items").asInstanceOf[List[Map[String, Any]]]
     val serializeItems = items.map { item =>
-      val itemDynamoJSON = parse(write(Map("M" -> item))(defaultFormats))
+      val itemDynamoJSON = Extraction.decompose(Map("m" -> item))(defaultFormats)
       val itemDynamoMap = DynamoMap(DynamoMap.unapply(itemDynamoJSON).get)
       if(convertFromSnakeCase) {
-        val itemJSONRaw = write(itemDynamoMap.flatten)(defaultFormats)
-        parse(itemJSONRaw).camelizeKeys.extract[A](formats, mf)
+        val itemJSON = Extraction.decompose(itemDynamoMap.flatten)(defaultFormats)
+        itemJSON.camelizeKeys.extract[A](formats, mf)
       }
       else {
-        val itemJSON = write(itemDynamoMap.flatten)(defaultFormats)
-        read[A](itemJSON)(formats, mf)
+        val itemJSON = Extraction.decompose(itemDynamoMap.flatten)(defaultFormats)
+        itemJSON.extract[A](formats, mf)
       }
     }
     DynamoPagedResults(serializeItems, queryLastEvaluatedKey)
@@ -168,10 +159,10 @@ class DynamoClient(
       val m = read[Map[String, Any]](new String(res.body, StandardCharsets.UTF_8))
       if(m.contains("Attributes")) {
         val item = m("Attributes").asInstanceOf[Map[String, Any]]
-        val itemDynamoJSON = parse(write(Map("M" -> item))(defaultFormats))
+        val itemDynamoJSON = Extraction.decompose(Map("M" -> item))(defaultFormats)
         val itemDynamoMap = DynamoMap(DynamoMap.unapply(itemDynamoJSON).get)
-        val itemJSON = write(itemDynamoMap.flatten)(defaultFormats)
-        Some(read[A](itemJSON)(formats, mf))
+        val aOpt = Extraction.decompose(itemDynamoMap.flatten)(defaultFormats).extract[A](formats, mf)
+        Some(aOpt)
       }
       else {
         None
@@ -189,10 +180,10 @@ class DynamoClient(
       val m = read[Map[String, Any]](new String(res.body, StandardCharsets.UTF_8))
       if(m.contains("Item")) {
         val item = m("Item").asInstanceOf[Map[String, Any]]
-        val itemDynamoJSON = parse(write(Map("M" -> item))(defaultFormats))
+        val itemDynamoJSON = Extraction.decompose(Map("M" -> item))(defaultFormats)
         val itemDynamoMap = DynamoMap(DynamoMap.unapply(itemDynamoJSON).get)
-        val itemJSON = write(itemDynamoMap.flatten)(defaultFormats)
-        Some(read[A](itemJSON)(formats, mf))
+        val aOpt = Extraction.decompose(itemDynamoMap.flatten)(defaultFormats).extract[A](formats, mf)
+        Some(aOpt)
       }
       else {
         None

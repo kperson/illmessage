@@ -21,7 +21,7 @@ class AmazonSubscriptionDAO(bucket: String, s3Client: S3Client)(implicit ec: Exe
   private val subscriptions = Ref(Map[String, MessageSubscription]())
   private val fileKey = "/subscriptions.json"
 
-  Await.result(load(), 5.seconds)
+  Await.result(load(), 7.seconds)
 
   def fetch(subscriptionId: String): Future[Option[MessageSubscription]] = {
     Future.successful(subscriptions.single.get.get(subscriptionId))
