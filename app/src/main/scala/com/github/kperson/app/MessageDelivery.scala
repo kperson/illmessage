@@ -2,6 +2,7 @@ package com.github.kperson.app
 
 import akka.NotUsed
 import akka.stream.scaladsl.Flow
+
 import com.github.kperson.aws.sqs.SQSClient
 import com.github.kperson.deadletter.{DeadLetterMessage, DeadLetterQueue}
 import com.github.kperson.routing.MessagePayload
@@ -17,7 +18,7 @@ object MessageDelivery {
       sqsClient.sendMessage(
         ms.subscription.queue,
         ms.message.body,
-        delay = ms.message.delayInSeconds.getOrElse(0).seconds,
+        delay = ms.message.delayInSeconds.map { _.seconds },
         messageAccountId = Some(ms.subscription.accountId)
       )
       .recoverWith { case ex: Throwable =>

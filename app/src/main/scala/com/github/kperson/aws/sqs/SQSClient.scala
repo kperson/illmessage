@@ -70,13 +70,13 @@ class SQSClient(
   def sendMessage(
     queueName: String,
     messageBody: String,
-    delay: FiniteDuration = 0.seconds,
+    delay: Option[FiniteDuration] = None,
     messageDeduplicationId: Option[String] = None,
     messageGroupId: Option[String] = None,
     messageAccountId: Option[String] = None
   ): Future[Any] = {
     val baseParams = Map(
-      "DelaySeconds" -> Some(delay.toSeconds.toString),
+      "DelaySeconds" -> delay.map { _.toSeconds.toString },
       "MessageBody" -> Some(messageBody),
       "MessageDeduplicationId" -> messageDeduplicationId,
       "MessageGroupId" -> messageGroupId,
