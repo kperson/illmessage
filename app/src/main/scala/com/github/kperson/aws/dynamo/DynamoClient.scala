@@ -119,7 +119,7 @@ class DynamoClient(
 
     val items = m("Items").asInstanceOf[List[Map[String, Any]]]
     val serializeItems = items.map { item =>
-      val itemDynamoJSON = Extraction.decompose(Map("m" -> item))(defaultFormats)
+      val itemDynamoJSON = Extraction.decompose(Map("M" -> item))(defaultFormats)
       val itemDynamoMap = DynamoMap(DynamoMap.unapply(itemDynamoJSON).get)
       if(convertFromSnakeCase) {
         val itemJSON = Extraction.decompose(itemDynamoMap.flatten)(defaultFormats)

@@ -45,6 +45,7 @@ class Multiplex[C](ackCallback: ACKCallback[C])(implicit ec: ExecutionContext) e
   private var downStreamSubscriber: Option[Subscriber[_ >: MessagePayload[C]]] = None
 
 
+
   def onMessageSent(subscriptionId: SubscriptionId, messageId: MessageId) {
     downStreamSubscription.foreach { _.onDownStreamMessageComplete(subscriptionId, messageId) }
   }
@@ -104,15 +105,14 @@ class MultiplexSubscription[C](
 )(implicit ec: ExecutionContext) extends Subscription {
 
   val downstreamDemand = Ref(0L)
-  val queuedForSendCount = Ref(0L)
-
   val messageMap = Ref(Map[String, (Message, MessageCount, C)]())
   val subscriptionMap = Ref(Map[SubscriptionId, (MessageSubscription, List[(MessageId, IsPendingDelivery)])]())
   val pendingPayloads = Ref(List[MessagePayload[C]]())
   val isRunning = Ref(false)
+
   private var isOpen = true
   private var upstreamComplete = false
-
+  private val maxPerSubscriptionBatch = 10
 
 
   def request(n: Long) {
@@ -139,16 +139,34 @@ class MultiplexSubscription[C](
     }
   }
 
+  private def nextMessages(maxNum: Int, list: List[MessagePayload[C]], base: List[MessagePayload[C]] = List.empty): List[MessagePayload[C]] = {
+    if(maxNum == 0 || list.isEmpty) {
+      base
+    }
+    else {
+      val firstSubscriptionId = list.head.subscription.id
+      val items = list.filter { _.subscription.id == firstSubscriptionId }.take(math.min(maxNum, maxPerSubscriptionBatch))
+      var size = 0
+      val itemsAdjustedForSize = items.takeWhile { i =>
+        size = size + i.message.body.length
+        size <= 1024 * 256
+      }
+      val nextItems = items.filter { _.subscription.id != firstSubscriptionId }
+      nextMessages(maxNum - itemsAdjustedForSize.length, nextItems, base ++ itemsAdjustedForSize)
+    }
+  }
+
   private def deliver() {
     val items = atomic { implicit tx =>
       val hasDemand = downstreamDemand() > 0
       val isR = isRunning() && hasDemand
       val pending = pendingPayloads()
-      val items = if(isR) {
+      val items = if(isR && pending.nonEmpty) {
         val dequeueAmount = math.min(downstreamDemand(), pending.length)
-        pendingPayloads.set(pending.drop(dequeueAmount.toInt))
-        queuedForSendCount.transform { _ + dequeueAmount }
-        pending.take(dequeueAmount.toInt)
+        val next = nextMessages(dequeueAmount.toInt, pending)
+        pendingPayloads.set(pending.filter { !next.contains(_) })
+        println(next.size)
+        next
       }
       else {
         List.empty
@@ -197,22 +215,28 @@ class MultiplexSubscription[C](
     }
   }
 
+
   def onUpStreamMessageReceived(groupedPayload: MessageSubscriptions[C]) {
     atomic { implicit tx =>
       groupedPayload.subscriptions.foreach { s =>
         val mMap = messageMap()
         mMap.get(groupedPayload.messageId) match {
           case Some((m, ct, context)) =>
+            //increment the number of subscribers to the message
             messageMap.set(mMap + (groupedPayload.messageId -> (m, ct + 1L, context)))
           case _ =>
+            //if a message is not in our system, just add it
             messageMap.set(mMap + (groupedPayload.messageId -> (groupedPayload.message, 1L, groupedPayload.context)))
         }
         val (sub, subMessages) = subscriptionMap().getOrElse(s.id, (s, List.empty))
         val shouldAddToPending = subMessages.isEmpty
+
+        //you can keep adding for direct delivery up to the batch size as long messages aren't currently being sent
         if (shouldAddToPending) {
           val payload = MessagePayload(groupedPayload.message, s, groupedPayload.messageId, groupedPayload.context)
           pendingPayloads.transform { _ ++ List(payload) }
         }
+        //add the message to the subscription map
         subscriptionMap.transform {
           _ + (sub.id -> (sub, subMessages ++ List((groupedPayload.messageId, shouldAddToPending))))
         }
@@ -223,7 +247,6 @@ class MultiplexSubscription[C](
 
   def onDownStreamMessageComplete(subscriptionId: SubscriptionId, messageId: MessageId) {
     val (ackRequired, context) = atomic { implicit tx =>
-      queuedForSendCount.transform { _ - 1L }
       val mMap = messageMap()
       val (sentMessage, remainingCount, completedMessageContext) = mMap(messageId)
       val ackRequired = if(remainingCount == 1L) {
@@ -240,17 +263,29 @@ class MultiplexSubscription[C](
       val sMap = subscriptionMap()
       val (sub, allMessages) = sMap(subscriptionId)
       val newMessages = allMessages.filter { case (mId, _) => mId != messageId }
+      val hasPending = newMessages.find  { case (_, isPending) => isPending }.isDefined
       if(newMessages.isEmpty) {
         //if there are no more message in this subscription, just delete the reference
         subscriptionMap.set(sMap - subscriptionId)
       }
+      //once all pending deliveries are complete, we can allow more messages to enter
+      else if(!hasPending) {
+        val toBePending = newMessages.take(maxPerSubscriptionBatch)
+        val subs = toBePending.map { case (mId, _) => (mId, true) } ++ newMessages.drop(toBePending.length)
+        subscriptionMap.set(sMap + (subscriptionId -> (sub, subs)))
+
+        val toBePendingPayloads = toBePending.map { case (mId, _) =>
+          MessagePayload(
+            mMap(mId)._1,
+            sub,
+            mId,
+            mMap(mId)._3
+          )
+        }
+        pendingPayloads.transform { _ ++ toBePendingPayloads }
+      }
       else {
-        //get the next, message, updates its status to pending, update the subscription list
-        val (nextMessageId, _) = newMessages.head
-        val newMessageList = List((nextMessageId, true)) ++ newMessages.drop(1)
-        subscriptionMap.set(sMap + (subscriptionId -> (sub, newMessageList)))
-        val (nextMessage, _, nextMessageContext) = mMap.apply(nextMessageId)
-        pendingPayloads.transform { _ ++ List(MessagePayload(nextMessage, sub, nextMessageId, nextMessageContext)) }
+        subscriptionMap.set(sMap + (subscriptionId -> (sub, newMessages)))
       }
       (ackRequired, completedMessageContext)
     }
@@ -259,6 +294,9 @@ class MultiplexSubscription[C](
       f.foreach { _ =>
         checkCompletion()
         deliveryRequested()
+      }
+      f.failed.foreach { ex =>
+        println(ex.getMessage)
       }
     }
     else {

@@ -48,11 +48,14 @@ object Main extends App {
     //load WAL messages before starting the HTTP server
     walMessages.foreach { wm =>
       wm.foreach { walTransfer.add(_) }
-      MessageSubscriptionSource(subscriptionDAO, walTransfer)
+     val x =  MessageSubscriptionSource(subscriptionDAO, walTransfer)
       .via(orderingFlow)
       .via(MessageDelivery(sqsClient, deadLetter))
       .runForeach { x =>
         onMessageSent(x.subscription.id, x.messageId)
+      }
+      x.failed.foreach { ex =>
+        //ex.printStackTrace()
       }
 
       val httpAdapter = new HttpAdapter(walTransfer, subscriptionDAO)

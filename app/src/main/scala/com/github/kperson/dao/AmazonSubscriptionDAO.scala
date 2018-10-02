@@ -2,9 +2,10 @@ package com.github.kperson.dao
 
 import com.github.kperson.aws.s3.S3Client
 import com.github.kperson.model.MessageSubscription
+import com.github.kperson.aws.AWSError
+
 import java.nio.charset.StandardCharsets
 
-import com.github.kperson.aws.AWSError
 import org.json4s.NoTypeHints
 import org.json4s.jackson.Serialization
 import org.json4s.jackson.Serialization._
