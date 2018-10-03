@@ -47,7 +47,7 @@ object Main extends App {
 
     //load WAL messages before starting the HTTP server
     walMessages.foreach { wm =>
-      wm.foreach { walTransfer.add(_) }
+     wm.foreach { walTransfer.add(_) }
       val stream = MessageSubscriptionSource(subscriptionDAO, walTransfer)
         .via(orderingFlow)
         .mapConcat { x  => x }

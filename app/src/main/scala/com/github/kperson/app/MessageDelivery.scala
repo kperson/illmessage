@@ -2,11 +2,12 @@ package com.github.kperson.app
 
 import akka.NotUsed
 import akka.stream.scaladsl.Flow
+
 import com.github.kperson.aws.sqs.SQSClient
 import com.github.kperson.deadletter.{DeadLetterMessage, DeadLetterQueue}
 import com.github.kperson.routing.MessagePayload
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 
@@ -34,14 +35,5 @@ object MessageDelivery {
       }.map { _ => ms }
     }
   }
-
-
-//    def apply(sqsClient: SQSClient, deadLetterQueue: DeadLetterQueue)(implicit ex: ExecutionContext): Flow[MessagePayload, MessagePayload, NotUsed] = {
-//      Flow[MessagePayload].mapAsyncUnordered(5) { ms =>
-//        Future.successful(ms)
-//      }
-//    }
-
-
 
 }

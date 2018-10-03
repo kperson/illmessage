@@ -183,7 +183,10 @@ object MultiplexSubscription {
     }
 
 
-    @tailrec final def transferToInFlight(payloads: List[MessagePayload], next: Option[Map[SubscriptionId, (MessageSubscription, List[(MessageId, MessageStatus)])]] = None): Map[SubscriptionId, (MessageSubscription, List[(MessageId, MessageStatus)])] = {
+    @tailrec final def transferToInFlight(
+     payloads: List[MessagePayload],
+     next: Option[Map[SubscriptionId, (MessageSubscription, List[(MessageId, MessageStatus)])]] = None
+    ): Map[SubscriptionId, (MessageSubscription, List[(MessageId, MessageStatus)])] = {
       val sMap = next.getOrElse(self)
       payloads match {
         case head :: tail =>
@@ -216,6 +219,11 @@ class MultiplexSubscription(
 
   import MultiplexSubscription._
 
+  private val targetInFlightAndReady = 300L
+  private var targetUpstreamDemand = 20L
+
+
+  val upstreamDemand = Ref(0L)
   val downstreamDemand = Ref(0L)
   val messageMap = Ref(Map[String, (Message, MessageCount)]())
   val subscriptionMap = Ref(Map[SubscriptionId, (MessageSubscription, List[(MessageId, MessageStatus)])]())
@@ -227,10 +235,14 @@ class MultiplexSubscription(
   def request(n: Long) {
     val requiresBootstrap = atomic { implicit tx =>
       downstreamDemand.transformAndGet(_ + n)
+      if(!hasReceivedInitialDemand()) {
+        upstreamDemand.set(n)
+      }
       !hasReceivedInitialDemand.getAndTransform { _ => true }
     }
 
     if(requiresBootstrap) {
+      targetUpstreamDemand = n + 2L
       upstreamSubscription.request(n)
     }
     deliveryRequested()
@@ -276,8 +288,7 @@ class MultiplexSubscription(
   }
 
   private def deliver() {
-
-    val items = atomic { implicit tx =>
+    val (items, demandIncrease) = atomic { implicit tx =>
       val shouldRun = isRunning() && downstreamDemand() > 0
       val nextItems = if(shouldRun) {
         val available = subscriptionMap().availableForSend(messageMap())
@@ -286,10 +297,22 @@ class MultiplexSubscription(
         val updatedSubscriptionMap = subscriptionMap().transferToInFlight(nextFlat)
         subscriptionMap.set(updatedSubscriptionMap)
         downstreamDemand.transform { _ - next.length }
-        next
+        val sMap = subscriptionMap()
+        val inFlightAndReadyCount = sMap.inFLight(messageMap()).length + sMap.availableForSend(messageMap()).length
+        val demandIncrease = if(inFlightAndReadyCount < targetInFlightAndReady && upstreamDemand() < targetUpstreamDemand) {
+          val fullCapacityDemandIncrement = targetUpstreamDemand - upstreamDemand()
+          val fullCapacityInFlightReadyIncrement = targetInFlightAndReady - inFlightAndReadyCount
+          val increase = math.min(fullCapacityDemandIncrement, fullCapacityInFlightReadyIncrement)
+          upstreamDemand.transform { _ + increase }
+          increase
+        }
+        else {
+          0L
+        }
+        (next, demandIncrease)
       }
       else {
-        List.empty
+        (List.empty, 0L)
       }
       nextItems
     }
@@ -300,6 +323,9 @@ class MultiplexSubscription(
 
     atomic { implicit tx =>
       isRunning.set(items.nonEmpty)
+    }
+    if(demandIncrease != 0L) {
+      upstreamSubscription.request(demandIncrease)
     }
     if(items.nonEmpty) {
       deliver()
@@ -324,9 +350,9 @@ class MultiplexSubscription(
           _ + (subscription.id -> (subscription, subMessages ++ List((groupedPayload.messageId, Queued))))
         }
       }
+      upstreamDemand.transform { _ - 1L }
       transferToReadyForSend(groupedPayload.subscriptions.map { _.id })
     }
-    upstreamSubscription.request(1)
     deliveryRequested()
   }
 
