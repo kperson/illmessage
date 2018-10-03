@@ -5,9 +5,9 @@ import com.github.kperson.wal.WAL
 
 import scala.concurrent.Future
 
-class MessageACK(wal: WAL) extends ACKCallback[String] {
+class MessageACK(wal: WAL) extends ACKCallback {
 
-  def ack(messageId: String, context: String): Future[Any] = {
+  def ack(messageId: String): Future[Any] = {
     wal.remove(messageId)
   }
 

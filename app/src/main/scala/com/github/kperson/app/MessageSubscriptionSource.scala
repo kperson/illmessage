@@ -14,7 +14,7 @@ object MessageSubscriptionSource {
       optSubscription match {
         case Some(subscription) =>
           val m = messages.map { case (message, id) =>
-            MessageSubscriptions[String](message, List(subscription), id, id)
+            MessageSubscriptions(message, List(subscription), id)
           }
           Future.successful(m)
         case _ => {
@@ -28,7 +28,7 @@ object MessageSubscriptionSource {
                 }.filter { s =>
                 TopicMatching.matchesTopicBinding(s.bindingKey, message.routingKey)
               }
-              MessageSubscriptions[String](message, matchingSubscriptions, id, id)
+              MessageSubscriptions(message, matchingSubscriptions, id)
             }
           }
         }

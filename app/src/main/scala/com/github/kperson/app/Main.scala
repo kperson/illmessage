@@ -45,21 +45,29 @@ object Main extends App {
       }
     }
 
+    var ct = 0
     //load WAL messages before starting the HTTP server
     walMessages.foreach { wm =>
-      wm.foreach { walTransfer.add(_) }
-     val x =  MessageSubscriptionSource(subscriptionDAO, walTransfer)
+      //wm.foreach { walTransfer.add(_) }
+     val stream = MessageSubscriptionSource(subscriptionDAO, walTransfer)
       .via(orderingFlow)
+      .mapConcat { x  => x }
       .via(MessageDelivery(sqsClient, deadLetter))
       .runForeach { x =>
-        onMessageSent(x.subscription.id, x.messageId)
-      }
-      x.failed.foreach { ex =>
-        //ex.printStackTrace()
+       //xs.foreach { x =>
+          ct = ct + 1
+         onMessageSent(x.subscription.id, x.messageId)
+        println("inc: " + ct)
+       //}
       }
 
       val httpAdapter = new HttpAdapter(walTransfer, subscriptionDAO)
       httpAdapter.run()
+
+      stream.failed.foreach { ex =>
+        ex.printStackTrace()
+        sys.exit(1)
+      }
     }
 
     walMessages.failed.foreach { ex =>
