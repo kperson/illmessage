@@ -11,7 +11,6 @@ import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.stm.{atomic, InTxn, Ref}
 
-
 case class MessagePayload(message: Message, subscription: MessageSubscription, messageId: MessageId)
 case class MessageSubscriptions(message: Message, subscriptions: List[MessageSubscription], messageId: MessageId)
 
@@ -184,7 +183,7 @@ object MultiplexSubscription {
     }
 
 
-    final def transferToInFlight(payloads: List[MessagePayload], next: Option[Map[SubscriptionId, (MessageSubscription, List[(MessageId, MessageStatus)])]] = None): Map[SubscriptionId, (MessageSubscription, List[(MessageId, MessageStatus)])] = {
+    @tailrec final def transferToInFlight(payloads: List[MessagePayload], next: Option[Map[SubscriptionId, (MessageSubscription, List[(MessageId, MessageStatus)])]] = None): Map[SubscriptionId, (MessageSubscription, List[(MessageId, MessageStatus)])] = {
       val sMap = next.getOrElse(self)
       payloads match {
         case head :: tail =>
@@ -217,35 +216,27 @@ class MultiplexSubscription(
 
   import MultiplexSubscription._
 
-  val internalDemand = Ref(0L)
   val downstreamDemand = Ref(0L)
   val messageMap = Ref(Map[String, (Message, MessageCount)]())
   val subscriptionMap = Ref(Map[SubscriptionId, (MessageSubscription, List[(MessageId, MessageStatus)])]())
   val isRunning = Ref(false)
+  val hasReceivedInitialDemand = Ref(false)
 
-  private var isOpen = true
   private val maxPerSubscriptionBatch = 10
 
-  private var hasRequestedUpstream = false
-
   def request(n: Long) {
-    if(!hasRequestedUpstream) {
-      hasRequestedUpstream = true
-      atomic { implicit tx =>
-        internalDemand.transform { _ + n }
-      }
-      upstreamSubscription.request(n)
+    val requiresBootstrap = atomic { implicit tx =>
+      downstreamDemand.transformAndGet(_ + n)
+      !hasReceivedInitialDemand.getAndTransform { _ => true }
     }
 
-
-    atomic { implicit tx =>
-      downstreamDemand.transformAndGet(_ + n)
+    if(requiresBootstrap) {
+      upstreamSubscription.request(n)
     }
     deliveryRequested()
   }
 
   def cancel() {
-    isOpen = false
   }
 
   private def deliveryRequested() {
@@ -287,8 +278,6 @@ class MultiplexSubscription(
   private def deliver() {
 
     val items = atomic { implicit tx =>
-      println("PRE OUTBOX")
-      subscriptionMap().stats(messageMap())
       val shouldRun = isRunning() && downstreamDemand() > 0
       val nextItems = if(shouldRun) {
         val available = subscriptionMap().availableForSend(messageMap())
@@ -297,8 +286,6 @@ class MultiplexSubscription(
         val updatedSubscriptionMap = subscriptionMap().transferToInFlight(nextFlat)
         subscriptionMap.set(updatedSubscriptionMap)
         downstreamDemand.transform { _ - next.length }
-        println("JUST ABOUT GO TO OUTBOX")
-        subscriptionMap().stats(messageMap())
         next
       }
       else {
@@ -313,9 +300,6 @@ class MultiplexSubscription(
 
     atomic { implicit tx =>
       isRunning.set(items.nonEmpty)
-      println("SENT TO OUTBOX")
-      subscriptionMap().stats(messageMap())
-
     }
     if(items.nonEmpty) {
       deliver()
@@ -388,8 +372,6 @@ class MultiplexSubscription(
         subscriptionMap.set(sMap + (subscriptionId -> (subscription, remainingMessages)))
         transferToReadyForSend(List(subscriptionId))
       }
-      println("POST DELIVER")
-      subscriptionMap().stats(messageMap())
       ackRequired
     }
     if(ackRequired) {
