@@ -1,12 +1,14 @@
 package com.github.kperson.aws.sqs
 
-import com.amazonaws.auth.AWSCredentialsProvider
-import com.github.kperson.aws.{Credentials, HttpRequest}
+import java.util.UUID
 
+import com.amazonaws.auth.AWSCredentialsProvider
+import com.github.kperson.aws.{AWSError, AWSHttpResponse, Credentials, HttpRequest}
 import org.reactivestreams.Publisher
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.util.{Failure, Try}
 import scala.xml.XML
 
 
@@ -18,6 +20,9 @@ case class SNSMessage[T](id: String, receiptHandle: String, body: T, attributes:
   }
 
 }
+
+case class BatchFailure(code: String, message: String)
+case class BatchSendException(failures: List[BatchFailure], response: AWSHttpResponse) extends RuntimeException(new String(response.body))
 
 class SQSClient(
   region: String,
@@ -66,6 +71,39 @@ class SQSClient(
 
     createRequest("POST",  "", Map("Action" -> "CreateQueue", "QueueName" -> queueName) ++ extraParams).run()
   }
+
+  def sendMessages(
+    queueName: String,
+    payloads: List[(String, Option[FiniteDuration], Option[String], Option[String])],
+    messageAccountId: Option[String] = None,
+  ): Future[Any] = {
+    val uuid = UUID.randomUUID().toString.replace("-", "").take(10)
+    val baseParams = (1 to payloads.length).zip(payloads).flatMap { case (index, (messageBody, duration, messageGroupId, messageDeduplicationId)) =>
+      Map(
+        s"SendMessageBatchRequestEntry.$index.Id" -> Some(s"$uuid-$index"),
+        s"SendMessageBatchRequestEntry.$index.MessageBody" -> Some(messageBody),
+        s"SendMessageBatchRequestEntry.$index.MessageGroupId" -> (if(queueName.endsWith(".fifo")) messageGroupId else None),
+        s"SendMessageBatchRequestEntry.$index.MessageDeduplicationId" -> (if(queueName.endsWith(".fifo")) messageDeduplicationId else None),
+        s"SendMessageBatchRequestEntry.$index.DelaySeconds" -> duration.map { _.toSeconds.toString }
+      ).collect {
+        case (k, Some(v)) => (k, v)
+      }.toList
+    }
+    val params = baseParams.toMap + ("Action" -> "SendMessageBatch", "Version" -> "2012-11-05")
+    createRequest("POST",  s"${messageAccountId.getOrElse(accountId)}/$queueName/", params).run()
+      .recover {
+        case  AWSError(resp) =>
+          val xml = XML.loadString(new String(resp.body))
+          println(xml)
+          val failures = (xml \\ "Error").map { e =>
+            val code = (e \ "Code").text
+            val message = (e \ "Message").text
+            BatchFailure(code, message)
+          }
+          Failure(BatchSendException(failures.toList, resp))
+      }
+  }
+
 
   def sendMessage(
     queueName: String,

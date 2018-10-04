@@ -33,7 +33,6 @@ object Main extends App {
 
     val (orderingFlow, onMessageSent) = Multiplex.flow(new MessageACK(wal))
 
-
     //check for wal messages
     val walMessages = wal.load().map { messages =>
       messages.map {  m =>
@@ -50,10 +49,11 @@ object Main extends App {
      wm.foreach { walTransfer.add(_) }
       val stream = MessageSubscriptionSource(subscriptionDAO, walTransfer)
         .via(orderingFlow)
-        .mapConcat { x  => x }
         .via(MessageDelivery(sqsClient, deadLetter))
-        .runForeach { x =>
-          onMessageSent(x.subscription.id, x.messageId)
+        .runForeach { xs =>
+          xs.foreach { x =>
+            onMessageSent(x.subscription.id, x.messageId)
+          }
         }
 
       val httpAdapter = new HttpAdapter(walTransfer, subscriptionDAO)
