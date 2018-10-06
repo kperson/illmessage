@@ -92,6 +92,8 @@ class Multiplex(ackCallback: ACKCallback)(implicit ec: ExecutionContext) extends
   }
 
   def onComplete() {
+    downStreamSubscription.foreach { _.onUpstreamComplete() }
+
   }
 
   def onError(t: Throwable) {
@@ -221,6 +223,7 @@ class MultiplexSubscription(
 
   private val targetInFlightAndReady = 300L
   private var targetUpstreamDemand = 20L
+  private var isUpstreamComplete = false
 
 
   val upstreamDemand = Ref(0L)
@@ -249,6 +252,7 @@ class MultiplexSubscription(
   }
 
   def cancel() {
+    println("")
   }
 
   private def deliveryRequested() {
@@ -356,6 +360,10 @@ class MultiplexSubscription(
     deliveryRequested()
   }
 
+  def onUpstreamComplete() {
+    isUpstreamComplete = true
+  }
+
   private def transferToReadyForSend(subscriptionIds: List[String])(implicit txn: InTxn) {
     subscriptionIds.foreach { subscriptionId =>
       val subMap = subscriptionMap()
@@ -403,7 +411,12 @@ class MultiplexSubscription(
     if(ackRequired) {
       val f = ackCallback.ack(messageId)
       f.foreach { _ =>
-        deliveryRequested()
+        if(isUpstreamComplete && subscriptionMap.single.get.isEmpty) {
+          downstreamSubscriber.onComplete()
+        }
+        else {
+          deliveryRequested()
+        }
       }
       f.failed.foreach { ex =>
         ex.printStackTrace()

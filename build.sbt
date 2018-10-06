@@ -14,7 +14,11 @@ lazy val commonSettings = Seq(
 lazy val app = (project in file("app")).
   settings(commonSettings: _*).
   settings(
-   fork in run := true
+   fork in run := true,
+    assemblyMergeStrategy in assembly := {
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case _ => MergeStrategy.first
+    }
   ).
   settings(libraryDependencies ++= Seq (
     "com.amazonaws"           % "aws-lambda-java-events"       % "2.2.2",

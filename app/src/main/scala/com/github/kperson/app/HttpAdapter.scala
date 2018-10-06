@@ -13,9 +13,9 @@ class HttpAdapter(
   val subscriptionDAO: SubscriptionDAO
 )(implicit fm: Materializer, system: ActorSystem) {
 
-  def run() {
+  def run(port: Int = 8080) {
     val api = new API(walTransfer, subscriptionDAO)
-    api.run()
+    api.run(port = port)
   }
 
 }

@@ -13,4 +13,7 @@ class AppConfig(config: Config = ConfigFactory.load().getConfig("app")) {
 
   def awsBucket: String = config.getString("aws.bucket")
 
+  def port: Int = config.getString("port").toInt
+
+
 }

@@ -57,7 +57,7 @@ object Main extends App {
         }
 
       val httpAdapter = new HttpAdapter(walTransfer, subscriptionDAO)
-      httpAdapter.run()
+      httpAdapter.run(port = config.port)
 
       stream.failed.foreach { ex =>
         ex.printStackTrace()
