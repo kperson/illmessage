@@ -1,6 +1,7 @@
 variable "namespace" {
   default = "illmessage"
 }
+
 variable "region" {
   default = "us-east-1"
 }

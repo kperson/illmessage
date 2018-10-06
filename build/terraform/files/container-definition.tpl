@@ -32,7 +32,7 @@
 		"logConfiguration": {
 			"logDriver": "awslogs",
 			"options": {
-				"awslogs-group": ${og_group},
+				"awslogs-group": ${log_group},
 				"awslogs-region": ${aws_region},
 				"awslogs-stream-prefix": "illmessage-api"
 			}
