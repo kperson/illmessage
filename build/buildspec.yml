@@ -1,0 +1,19 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - cd build/terraform
+      - echo 'Logging in to ECR...'
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+      - echo 'Installing terraform...'
+      - wget https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip
+      - unzip terraform_0.11.8_linux_amd64.zip
+      - chmod +x terraform
+      - rm terraform_0.11.8_linux_amd64.zip
+  
+  build:
+    commands:
+      - echo 'Building...'
+      - ./terraform init -backend-config="profile=default" -backend-config="bucket=$BUILD_STATE_BUCKET" -backend-config="region=$AWS_DEFAULT_REGION" -backend-config="key=illmessage-build.tf"
+      - ./terraform apply -var "profile=default" -var "namespace=$NAMESPACE" -var "region=$AWS_DEFAULT_REGION" -auto-approve
