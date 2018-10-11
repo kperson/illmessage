@@ -16,7 +16,7 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
 
     resources = [
-      "	arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${var.namespace}*",
+      "	arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${var.namespace}_*",
     ]
   }
 
@@ -35,7 +35,7 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
 
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.namespace}*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.namespace}_",
     ]
   }
 
@@ -52,7 +52,7 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
 
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.namespace}*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.namespace}_",
     ]
   }
 
@@ -77,14 +77,30 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     resources = ["*"]
   }
 
+  # statement {
+  #   effect = "Allow"
+
+  #   actions = [
+  #     "ec2:",
+  #   ]
+
+  #   resources = ["*"]
+  # }
+
   statement {
     effect = "Allow"
-
     actions = [
-      "ec2:*",
+      "ecr:GetAuthorizationToken"
     ]
-
     resources = ["*"]
+  }
+
+   statement {
+    effect = "Allow"
+    actions = [
+      "ecr:*"
+    ]
+    resources = ["arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/${var.namespace}*"]
   }
 }
 
