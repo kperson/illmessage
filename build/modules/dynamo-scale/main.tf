@@ -1,6 +1,9 @@
 variable "table_name" {}
 variable "table_arn" {}
 
+
+variable "namespace" {}
+
 variable "max_capacity" {
   default = 5000
 }
@@ -44,12 +47,12 @@ data "aws_iam_policy_document" "assume_scale_policy_doc" {
 }
 
 resource "aws_iam_role" "scale_role" {
-  name               = "dynamodb_scale_role_${var.table_name}"
+  name               = "${var.namespace}_dynamodb_scale_role_${var.table_name}"
   assume_role_policy = "${data.aws_iam_policy_document.assume_scale_policy_doc.json}"
 }
 
 resource "aws_iam_role_policy" "scale_policy" {
-  name   = "dynamodb_scale_policy_${var.table_name}"
+  name   = "${var.namespace}_dynamodb_scale_policy_${var.table_name}"
   role   = "${aws_iam_role.scale_role.id}"
   policy = "${data.aws_iam_policy_document.scale_policy_doc.json}"
 }
