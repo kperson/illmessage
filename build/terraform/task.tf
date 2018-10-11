@@ -13,6 +13,7 @@ data "template_file" "api_container_definitions" {
     cpu               = "256"
     memory            = "512"
     log_group         = "${jsonencode(var.namespace)}"
+    docker_image      = "${jsonencode(aws_ecr_repository.repo.repository_url)}"
   }
 }
 

@@ -7,10 +7,10 @@ phases:
       - echo 'Logging in to ECR...'
       - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
       - echo 'Installing terraform...'
-      - wget https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip
-      - unzip terraform_0.11.8_linux_amd64.zip
+      - wget -O terraform.zip $TERRAFORM_ZIP_URL
+      - unzip terraform.zip
       - chmod +x terraform
-      - rm terraform_0.11.8_linux_amd64.zip
+      - rm terraform.zip
   
   build:
     commands:

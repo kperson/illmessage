@@ -27,6 +27,11 @@ resource "aws_codebuild_project" "codebuild" {
       "name"  = "BUILD_STATE_BUCKET"
       "value" = "${aws_s3_bucket.state_bucket.id}"
     }
+
+    environment_variable {
+      "name"  = "TERRAFORM_ZIP_URL"
+      "value" = "https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip"
+    }
   }
 
   source {

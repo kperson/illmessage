@@ -12,11 +12,11 @@ data "aws_iam_policy_document" "codebuild_assume_role_policy" {
 data "aws_iam_policy_document" "codebuild_role_policy" {
   statement {
     actions = [
-      "dynamodb:CreateTable",
+      "dynamodb:*",
     ]
 
     resources = [
-      "	arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${var.namespace}_*",
+      "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${var.namespace}_*",
     ]
   }
 
@@ -52,14 +52,15 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
 
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.namespace}_",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.namespace}_*",
     ]
   }
 
   statement {
     actions = [
-      "s3:getObject",
-      "s3:putObject",
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:GetObjectVersion",
     ]
 
     resources = [
@@ -71,36 +72,76 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     effect = "Allow"
 
     actions = [
-      "logs:*",
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
     ]
 
-    resources = ["*"]
+    resources = [
+      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/${var.namespace}_codebuild",
+      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/${var.namespace}_codebuild:*",
+    ]
   }
-
-  # statement {
-  #   effect = "Allow"
-
-  #   actions = [
-  #     "ec2:",
-  #   ]
-
-  #   resources = ["*"]
-  # }
 
   statement {
     effect = "Allow"
+
     actions = [
-      "ecr:GetAuthorizationToken"
+      "logs:CreateLogGroup",
     ]
+
+    resources = [
+      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.namespace}:*",
+      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.namespace}",
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "ec2:CreateNetworkInterface",
+      "ec2:DescribeDhcpOptions",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DeleteNetworkInterface",
+      "ec2:DescribeSubnets",
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeVpcs",
+    ]
+
     resources = ["*"]
   }
 
-   statement {
+  statement {
     effect = "Allow"
+
     actions = [
-      "ecr:*"
+      "ec2:CreateNetworkInterfacePermission",
     ]
-    resources = ["arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/${var.namespace}*"]
+
+    resources = ["arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:network-interface/*"]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "ecr:GetAuthorizationToken",
+      "ecr:CreateRepository",
+      "ecr:DescribeRepositories",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "ecr:*",
+    ]
+
+    resources = ["arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/${var.namespace}_*"]
   }
 }
 
