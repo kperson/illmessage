@@ -32,13 +32,13 @@ case class MessagePayload(
 trait MessageAPI extends MarshallingSupport {
 
   def wal: WAL
-
   def messageRoute: server.Route = {
     path("messages") {
       post {
         decodeRequest {
           entity(as[List[MessagePayload]]) { messagePayloads =>
             val messages = messagePayloads.map { _.toMessage }
+            println("hello")
             onSuccess(wal.write(messages)) { _ =>
               complete((StatusCodes.OK, messages))
             }

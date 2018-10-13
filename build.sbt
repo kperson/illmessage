@@ -1,6 +1,6 @@
 val scalaTestVersion = "3.0.5"
 val scalaMockSupportVersion = "3.6.0"
-val akkaStreamVersion = "2.5.14"
+val akkaStreamVersion = "2.5.17"
 
 
 lazy val commonSettings = Seq(

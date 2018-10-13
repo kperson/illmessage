@@ -8,6 +8,7 @@ object JSONFormats {
   implicit val formats: Formats = Serialization.formats(NoTypeHints) ++ (
     new DeadLetterMessageSerializer() ::
     new WALRecordSerializer() ::
+    new MethodSerializer() ::
     Nil
   )
 
