@@ -58,13 +58,12 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
   statement {
     actions = [
-      "s3:GetObject",
-      "s3:PutObject",
-      "s3:GetObjectVersion",
+      "s3:*",
     ]
 
     resources = [
-      "${aws_s3_bucket.state_bucket.arn}/illmessage.tf",
+      "${aws_s3_bucket.state_bucket.arn}/*",
+      "${aws_s3_bucket.state_bucket.arn}",
     ]
   }
 
@@ -93,6 +92,18 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     resources = [
       "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.namespace}:*",
       "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.namespace}",
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "logs:DescribeLogGroups",
+    ]
+
+    resources = [
+      "*",
     ]
   }
 

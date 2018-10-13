@@ -5,16 +5,16 @@ import akka.stream.Materializer
 
 import com.github.kperson.api.API
 import com.github.kperson.dao.SubscriptionDAO
-import com.github.kperson.wal.WALTransfer
+import com.github.kperson.wal.WAL
 
 
 class HttpAdapter(
-  val walTransfer: WALTransfer,
+  val wal: WAL,
   val subscriptionDAO: SubscriptionDAO
 )(implicit fm: Materializer, system: ActorSystem) {
 
   def run(port: Int = 8080) {
-    val api = new API(walTransfer, subscriptionDAO)
+    val api = new API(wal, subscriptionDAO)
     api.run(port = port)
   }
 

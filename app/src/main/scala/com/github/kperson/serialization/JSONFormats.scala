@@ -6,7 +6,9 @@ import org.json4s.jackson.Serialization
 object JSONFormats {
 
   implicit val formats: Formats = Serialization.formats(NoTypeHints) ++ (
-    new DeadLetterMessageSerializer()
-      :: Nil
-    )
+    new DeadLetterMessageSerializer() ::
+    new WALRecordSerializer() ::
+    Nil
+  )
+
 }

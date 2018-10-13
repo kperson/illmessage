@@ -1,16 +1,18 @@
 package com.github.kperson.api
 
+import akka.http.scaladsl.server
 import akka.http.scaladsl.model.StatusCodes
-import com.github.kperson.model.MessageSubscription
-
 import akka.http.scaladsl.server.Directives._
+
+import com.github.kperson.model.MessageSubscription
 import com.github.kperson.dao.SubscriptionDAO
+
 
 trait SubscriptionAPI extends MarshallingSupport {
 
   def subscriptionDAO: SubscriptionDAO
 
-  def subscriptionRoute = {
+  def subscriptionRoute: server.Route = {
     pathPrefix("subscription") {
       pathPrefix("account-id" / Segment) { accountId =>
         pathPrefix("exchange" / Segment) { exchange =>

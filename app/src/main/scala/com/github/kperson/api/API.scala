@@ -3,17 +3,18 @@ package com.github.kperson.api
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
+
 import akka.http.scaladsl.server.Directives._
 
 import com.github.kperson.dao.SubscriptionDAO
 import com.github.kperson.serialization.JSONFormats
-import com.github.kperson.wal.WALTransfer
+import com.github.kperson.wal.WAL
 
 import org.json4s.Formats
 
 
 class API(
-  val walTransfer: WALTransfer,
+  val wal: WAL,
   val subscriptionDAO: SubscriptionDAO
 )(implicit fm: Materializer, system: ActorSystem)
 extends MessageAPI

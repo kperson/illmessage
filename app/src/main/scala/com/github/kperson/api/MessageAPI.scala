@@ -4,63 +4,43 @@ import akka.http.scaladsl.server
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 
-import java.util.{Timer, TimerTask}
-import java.util.concurrent.TimeoutException
-
 import com.github.kperson.model.Message
-import com.github.kperson.wal.{Transfer, WALTransfer}
+import com.github.kperson.wal.WAL
 
-import scala.concurrent.Promise
-import scala.concurrent.duration._
-import scala.util.Failure
+import java.util.UUID
 
 
-class MessageWithTimeout(
-  val ttl: Long,
-  val messages: List[Message],
-  promise: Promise[Any]
-) extends Transfer {
+case class MessagePayload(
+  routingKey: String,
+  body: String,
+  exchange: String,
+  delayInSeconds: Option[Int] = None,
+  groupId: Option[String] = None
+) {
 
-  def onTransfer() {
-    promise.success(true)
-  }
-
-  def messageId: Option[String] = None
-
-  def preComputedSubscription = None
+  def toMessage = Message(
+    routingKey,
+    body,
+    exchange,
+    delayInSeconds,
+    groupId.getOrElse(UUID.randomUUID().toString.replace("-", ""))
+  )
 
 }
 
+
 trait MessageAPI extends MarshallingSupport {
 
-  val timeout = 4.seconds
-
-  def walTransfer: WALTransfer
+  def wal: WAL
 
   def messageRoute: server.Route = {
     path("messages") {
       post {
         decodeRequest {
-          entity(as[List[Message]]) { messages =>
-            val timer = new Timer()
-            val p = Promise[Any]()
-            timer.schedule(new TimerTask {
-              def run() {
-                if(!p.isCompleted) {
-                  p.failure(new TimeoutException("wal write timed out"))
-                }
-              }
-            }, timeout.toMillis + 1.second.toMillis) //one second lax time
-
-            val transfer = new MessageWithTimeout(System.currentTimeMillis + timeout.toMillis, messages, p)
-            walTransfer.add(transfer)
-
-            onComplete(p.future) {
-              case Failure(_: TimeoutException) =>
-                complete((StatusCodes.RequestTimeout, Map("error" -> "server is too busy, your request has been reject, please try again later")))
-              case _ =>
-                timer.cancel()
-                complete((StatusCodes.OK, messages))
+          entity(as[List[MessagePayload]]) { messagePayloads =>
+            val messages = messagePayloads.map { _.toMessage }
+            onSuccess(wal.write(messages)) { _ =>
+              complete((StatusCodes.OK, messages))
             }
           }
         }

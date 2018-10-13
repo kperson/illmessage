@@ -10,26 +10,9 @@ import org.json4s.Formats
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
 
-class WALTransferMessage(
-  val message: Message,
-  val mId: String,
-  val preComputedSubscription: Option[MessageSubscription],
-  val ttl: Long = System.currentTimeMillis + 5.minutes.toMillis
-) extends Transfer {
-
-  val messageId = Some(mId)
-
-  val messages = List(message)
-
-  def onTransfer() {
-  }
-
-}
 
 case class WALRecord(
   message: Message,
-  batchId: String,
-  partitionKey: String,
   messageId: String,
   preComputedSubscription: Option[MessageSubscription] = None
 )
@@ -56,7 +39,7 @@ class WAL(client: DynamoClient, walTable: String) {
       val timestamp = "%014d".format(System.currentTimeMillis())
       val insertNum = "%09d".format(index)
       val writeNumFormat =  "%07d".format(writeNum)
-      WALRecord(message, batchId, WAL.partitionKey, s"$timestamp-$writeNumFormat-$insertNum-$batchId", subscriptions)
+      WALRecord(message, s"$timestamp-$writeNumFormat-$insertNum-$batchId", subscriptions)
     }.grouped(25).toList
     Future.sequence(transactionGroups.map { writeWALRecords(_) })
     .map { _ =>
@@ -64,32 +47,11 @@ class WAL(client: DynamoClient, walTable: String) {
     }
   }
 
-  def load(
-    base: List[WALRecord] = List.empty,
-    lastEvaluatedKey: Option[Map[String, Any]] = None
-  ): Future[List[WALRecord]] = {
-    val f = client.query[WALRecord](
-      walTable,
-      "partitionKey = :partitionKey",
-      expressionAttributeValues = Map(":partitionKey" -> WAL.partitionKey),
-      lastEvaluatedKey = lastEvaluatedKey,
-      limit = 300,
-      consistentRead = true
-    )
-    f.flatMap { records =>
-      val newBase = base ++ records.results
-      records.lastEvaluatedKey match {
-        case key @ Some(_) => load(newBase, key)
-        case _ => Future.successful(newBase)
-      }
-    }
-  }
-
-  def remove(messageId: String): Future[Any] = {
+  def remove(messageId: String, partitionKey: String): Future[Any] = {
     client.deleteItem[WALRecord](
       walTable,
       Map(
-        "partitionKey" -> WAL.partitionKey,
+        "partitionKey" -> partitionKey,
         "messageId" -> messageId
       )
     )
@@ -123,12 +85,5 @@ class WAL(client: DynamoClient, walTable: String) {
       case _ => Future.successful(true)
     }
   }
-
-}
-
-object WAL {
-
-  val partitionKey = "wal_partition_key"
-
 
 }

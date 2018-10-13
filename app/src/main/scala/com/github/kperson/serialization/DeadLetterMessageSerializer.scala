@@ -2,14 +2,15 @@ package com.github.kperson.serialization
 
 import com.github.kperson.deadletter.DeadLetterMessage
 import com.github.kperson.model.{Message, MessageSubscription}
-import org.json4s.{CustomSerializer, Extraction}
+
+import org.json4s.{CustomSerializer, Extraction, Formats}
 import org.json4s.JsonAST._
 
 
 class DeadLetterMessageSerializer extends CustomSerializer[DeadLetterMessage](format => (
   {
     case json: JObject =>
-      implicit val formats = format
+      implicit val formats: Formats = format
       val messageId = (json \ "messageId").extract[String]
       val insertedAt = (json \ "insertedAt").extract[Long]
       val ttl = (json \ "ttl").extract[Long]

@@ -4,9 +4,20 @@ case class Message(
   routingKey: String,
   body: String,
   exchange: String,
-  delayInSeconds: Option[Int] = None
+  delayInSeconds: Option[Int] = None,
+  groupId: String
 ) {
-  require(body.length <= 256 * 1024, "message body must be less than 256 KB")
+  require(body.length <= 256 * 1024, "message body must be less than or equal to 256 KB")
+
+  def partitionKey = {
+    val text = s"groupId:$groupId:exchange:$exchange"
+    java.security.MessageDigest.getInstance("MD5")
+      .digest(text.getBytes())
+      .map(0xFF & _)
+      .map { "%02x".format(_) }
+      .foldLeft(""){_ + _}
+  }
+
 }
 
 case class MessageSubscription(
