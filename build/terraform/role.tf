@@ -5,28 +5,12 @@ data "aws_iam_policy_document" "tasks_assume_role_policy_doc" {
 
     principals {
       type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-
-    principals {
-      type        = "Service"
       identifiers = ["lambda.amazonaws.com"]
     }
   }
 }
 
 data "aws_iam_policy_document" "tasks_role_policy_doc" {
-  statement {
-    actions = [
-      "ecs:RunTask",
-      "iam:PassRole",
-      "ecs:StopTask",
-    ]
-
-    resources = [
-      "*",
-    ]
-  }
 
   statement {
     actions = [
