@@ -38,6 +38,16 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "${aws_s3_bucket.subscription.arn}"
     ]
   }
+
+  statement {
+    actions = [
+      "logs:*",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
 }
 
 resource "aws_iam_policy" "tasks_policy" {
