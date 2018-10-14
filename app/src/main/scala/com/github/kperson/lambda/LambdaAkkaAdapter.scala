@@ -94,7 +94,6 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
       println("WRITING.......")
       println(write(lambdaResponse))
       output.write(write(lambdaResponse).getBytes(StandardCharsets.UTF_8))
-      output.flush()
       output.close()
 //      val writer = new OutputStreamWriter(output, StandardCharsets.UTF_8.name)
 //      writer.write(write(lambdaResponse))
