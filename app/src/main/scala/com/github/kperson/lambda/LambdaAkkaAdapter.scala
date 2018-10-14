@@ -13,7 +13,6 @@ import com.github.kperson.serialization.JSONFormats
 import org.json4s.Formats
 import org.json4s.jackson.Serialization._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Success
 
 
@@ -23,6 +22,8 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
 
   val route: server.Route
   val actorMaterializer: ActorMaterializer
+
+  import actorMaterializer.executionContext
 
 
   def handleRequest(input: InputStream, output: OutputStream, context: Context) {
