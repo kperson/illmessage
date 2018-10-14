@@ -28,7 +28,10 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
     println("1....................................")
     implicit val formats: Formats = JSONFormats.formats
 
-    val amazonRequest = read[LambdaHttpRequest](input)
+    val source = scala.io.Source.fromInputStream(input).mkString
+    println(source)
+
+    val amazonRequest = read[LambdaHttpRequest](source)
     val request = new LambdaRequestContextImpl(amazonRequest.normalize(), actorMaterializer)
 
     try {
