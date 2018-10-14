@@ -30,6 +30,7 @@ lazy val app = (project in file("app")).
     "org.asynchttpclient"     %  "async-http-client"           % "2.5.3",
     "org.scala-lang.modules"  %% "scala-xml"                   % "1.1.0",
     "org.slf4j"               % "slf4j-api"                    % "1.7.25",
+    "io.lemonlabs"            %% "scala-uri"                   % "1.3.1",
     "ch.qos.logback"          %  "logback-classic"             % "1.2.3" % "runtime",
     "com.typesafe.akka"       %% "akka-stream"                 % akkaStreamVersion,
     "com.typesafe.akka"       %% "akka-http"                   % "10.1.5",

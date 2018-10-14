@@ -5,6 +5,8 @@ import java.io.{ByteArrayInputStream, InputStream}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.HttpHeader.ParsingResult.Ok
 
+import io.lemonlabs.uri.QueryString
+
 sealed trait Method {
 
   def akkaHttpMethod: akka.http.scaladsl.model.HttpMethod = {
@@ -40,7 +42,7 @@ case class LambdaHttpRequest(
   path: String,
   body: Option[String] = None,
   queryStringParameters: Option[Map[String, String]] = None,
-  headers: Map[String, String] = Map.empty,
+  headers: Option[Map[String, String]] = None,
   isBase64Encoded: Boolean
 ) {
 
@@ -67,14 +69,15 @@ case class LambdaHttpRequest(
 
   def bodyOrEmpty: String = body.getOrElse("")
 
-  def akkaHttpRequest = {
-    val akkaHeaders = headers.map { case (k, v) =>
+  def akkaHttpRequest: HttpRequest = {
+
+    val akkaHeaders = headers.getOrElse(Map[String, String]()).map { case (k, v) =>
       HttpHeader.parse(k, v)
     }.collect {
       case Ok(header, _) => header
     }.toList
 
-    val contentTypeStr = headers
+    val contentTypeStr = headers.getOrElse(Map[String, String]())
       .find { case (k, _) => k.toLowerCase() == "content-type" }
       .map { case (_, v)  => v }
       .getOrElse("application/octet-stream")
@@ -85,9 +88,17 @@ case class LambdaHttpRequest(
       case _ => None
     }
 
+    val paramStr = queryStringParameters.map { x => QueryString.fromTraversable(x.toList) }
+    val basePath = if(path.startsWith("/")) path else "/" + path
+
+    val uriStr = paramStr match {
+      case Some(p) => basePath + p.toString
+      case _ => basePath
+    }
+
     HttpRequest(
       httpMethod.akkaHttpMethod,
-      Uri(if(path.startsWith("/")) path else "/" + path),
+      Uri(uriStr),
       akkaHeaders,
       contentType.map { HttpEntity(_, bodyBytes) }.getOrElse(HttpEntity.Empty),
       HttpProtocols.`HTTP/1.1`

@@ -38,11 +38,15 @@ trait MessageAPI extends MarshallingSupport {
         decodeRequest {
           entity(as[List[MessagePayload]]) { messagePayloads =>
             val messages = messagePayloads.map { _.toMessage }
-            println("hello")
             onSuccess(wal.write(messages)) { _ =>
               complete((StatusCodes.OK, messages))
             }
           }
+        }
+      } ~ get {
+        parameters('color) { (color) =>
+          println(color)
+          complete(color)
         }
       }
     }
