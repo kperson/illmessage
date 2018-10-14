@@ -31,8 +31,8 @@ case class MessagePayload(
 
 trait MessageAPI extends MarshallingSupport {
 
-  def wal: WAL
-  def messageRoute: server.Route = {
+  val wal: WAL
+  val messageRoute: server.Route = {
     path("messages") {
       post {
         decodeRequest {

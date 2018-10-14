@@ -10,9 +10,9 @@ import com.github.kperson.dao.SubscriptionDAO
 
 trait SubscriptionAPI extends MarshallingSupport {
 
-  def subscriptionDAO: SubscriptionDAO
+  val subscriptionDAO: SubscriptionDAO
 
-  def subscriptionRoute: server.Route = {
+  val subscriptionRoute: server.Route = {
     pathPrefix("subscription") {
       pathPrefix("account-id" / Segment) { accountId =>
         pathPrefix("exchange" / Segment) { exchange =>

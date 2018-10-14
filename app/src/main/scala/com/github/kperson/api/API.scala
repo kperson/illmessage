@@ -20,7 +20,7 @@ extends MessageAPI
 with SubscriptionAPI {
 
 
-  lazy val jsonFormats: Formats = JSONFormats.formats
+  val jsonFormats: Formats = JSONFormats.formats
   val route: server.Route = messageRoute ~ subscriptionRoute
 
   def run(interface: String = "0.0.0.0", port: Int = 8080) {
