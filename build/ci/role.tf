@@ -10,6 +10,9 @@ data "aws_iam_policy_document" "codebuild_assume_role_policy" {
 }
 
 data "aws_iam_policy_document" "codebuild_role_policy" {
+
+  # Custom
+
   statement {
     actions = [
       "dynamodb:*",
@@ -55,6 +58,9 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.namespace}_*",
     ]
   }
+
+
+  # Code build
 
   statement {
     actions = [
@@ -118,6 +124,17 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
 
     resources = ["arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:network-interface/*"]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "ecr:GetAuthorizationToken",
+      "ecr:DescribeRepositories",
+    ]
+
+    resources = ["*"]
   }
 
 }
