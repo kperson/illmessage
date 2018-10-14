@@ -1,20 +1,20 @@
 package com.github.kperson.lambda
 
-import java.io._
-import java.nio.charset.StandardCharsets
-
 import akka.http.scaladsl.server
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.{LambdaRequestContextImpl, RejectionHandler}
 import akka.http.scaladsl.server.RouteResult.{Complete, Rejected}
 import akka.stream.ActorMaterializer
-import com.amazonaws.services.lambda.runtime.{Context, RequestHandler, RequestStreamHandler}
+
+import com.amazonaws.services.lambda.runtime.{Context, RequestHandler}
 import com.github.kperson.serialization.JSONFormats
+
+import java.io._
+
 import org.json4s.Formats
 import org.json4s.jackson.Serialization._
 
 import scala.concurrent.{Await, Future}
-import scala.util.Success
 import scala.concurrent.duration._
 
 
@@ -31,7 +31,7 @@ trait LambdaAkkaAdapter extends RequestHandler[String, String] {
 
   def handleRequest(input: String, context: Context): String = {
     implicit val formats: Formats = JSONFormats.formats
-
+    println(input)
     val amazonRequest = read[LambdaHttpRequest](input)
     val request = new LambdaRequestContextImpl(amazonRequest.normalize(), actorMaterializer)
 
