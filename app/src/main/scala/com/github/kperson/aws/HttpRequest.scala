@@ -37,6 +37,10 @@ class HttpRequest(
   private val builder = new RequestBuilder(finalMethod, true)
   builder.setUrl(s"$serviceEndpoint${AWSSigning.uriEncode(finalPath, isParameter = false)}")
 
+
+  println(finalPath)
+  println(finalServiceEndpoint)
+
   private val signing = AWSSigning(
     awsService,
     credentials,
