@@ -37,9 +37,9 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
           RejectionHandler.default(l) match {
             case Some(rejectHandler) =>
               rejectHandler(request).onComplete {
-                case Success(Complete(res)) => c
+                case Success(Complete(res)) =>
                   println("2....................................")
-                  omplete(res, output)(actorMaterializer)
+                  complete(res, output)(actorMaterializer)
 
                 case _ =>
                   println("3....................................")
