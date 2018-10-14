@@ -61,7 +61,7 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
     bodyFuture.foreach { body =>
       val lambdaResponse = LambdaHttpResponse(response.status.intValue, body, headers)
       println(write(lambdaResponse))
-      val writer = new OutputStreamWriter(out, StandardCharsets.UTF_8.name)
+      val writer = new OutputStreamWriter(output, StandardCharsets.UTF_8.name)
       writer.write(write(lambdaResponse))
       writer.flush()
       writer.close()
