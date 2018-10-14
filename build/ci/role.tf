@@ -33,7 +33,7 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
 
     resources = [
-      "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function/${var.namespace}_*",
+      "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.namespace}_*",
     ]
   }
 
@@ -82,6 +82,16 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
     resources = [
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.namespace}_*",
+    ]
+  }
+
+  statement {
+    actions = [
+      "application-autoscaling:*",
+    ]
+
+    resources = [
+      "*",
     ]
   }
 
