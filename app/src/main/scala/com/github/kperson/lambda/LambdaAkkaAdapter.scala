@@ -90,14 +90,19 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
     bodyFuture.foreach { body =>
       println("HERE....................................................................")
       val lambdaResponse = LambdaHttpResponse(response.status.intValue, body, headers)
+      println(lambdaResponse)
+      println("WRITING.......")
       println(write(lambdaResponse))
-      val writer = new OutputStreamWriter(output, StandardCharsets.UTF_8.name)
-      writer.write(write(lambdaResponse))
-      writer.flush()
-      writer.close()
-
+      output.write(write(lambdaResponse).getBytes(StandardCharsets.UTF_8))
       output.flush()
       output.close()
+//      val writer = new OutputStreamWriter(output, StandardCharsets.UTF_8.name)
+//      writer.write(write(lambdaResponse))
+//      writer.flush()
+//      writer.close()
+//
+//      output.flush()
+//      output.close()
     }
   }
 
