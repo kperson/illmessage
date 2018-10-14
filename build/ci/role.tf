@@ -87,6 +87,18 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
       "arn:aws:s3:::${var.namespace}-*",
     ]
   }
+
+  statement {
+    actions = [
+      "apigateway:*",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+
+   
   
 
 

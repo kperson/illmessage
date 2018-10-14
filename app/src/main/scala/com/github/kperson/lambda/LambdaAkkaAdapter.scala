@@ -79,7 +79,6 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
 
     bodyFuture.map { body =>
       val lambdaResponse = LambdaHttpResponse(response.status.intValue, body, headers)
-      println(lambdaResponse)
       write(lambdaResponse)
     }
   }
