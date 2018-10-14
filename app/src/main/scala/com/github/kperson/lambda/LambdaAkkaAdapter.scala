@@ -56,6 +56,8 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
           }
         case Success(Complete(res)) =>
           println("5....................................")
+          println(res)
+          println(actorMaterializer)
           complete(res, output)(actorMaterializer)
         case _ =>
           println("6....................................")
