@@ -25,6 +25,7 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
   def actorMaterializer: ActorMaterializer
 
   def handleRequest(input: InputStream, output: OutputStream, context: Context) {
+    println("1....................................")
     implicit val formats: Formats = JSONFormats.formats
 
     val amazonRequest = read[LambdaHttpRequest](input)
@@ -36,14 +37,24 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
           RejectionHandler.default(l) match {
             case Some(rejectHandler) =>
               rejectHandler(request).onComplete {
-                case Success(Complete(res)) => complete(res, output)(actorMaterializer)
+                case Success(Complete(res)) => c
+                  println("2....................................")
+                  omplete(res, output)(actorMaterializer)
 
-                case _ => complete(HttpResponse(500), output)(actorMaterializer)
+                case _ =>
+                  println("3....................................")
+                  complete(HttpResponse(500), output)(actorMaterializer)
               }
-            case _ => complete(HttpResponse(500), output)(actorMaterializer)
+            case _ =>
+              println("4....................................")
+              complete(HttpResponse(500), output)(actorMaterializer)
           }
-        case Success(Complete(res)) => complete(res, output)(actorMaterializer)
-        case _ => complete(HttpResponse(500), output)(actorMaterializer)
+        case Success(Complete(res)) =>
+          println("5....................................")
+          complete(res, output)(actorMaterializer)
+        case _ =>
+          println("6....................................")
+          complete(HttpResponse(500), output)(actorMaterializer)
       }
     }
     catch {
@@ -54,6 +65,7 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
   }
 
   private def complete(response: HttpResponse, output: OutputStream)(implicit materializer: ActorMaterializer) {
+    println("7....................................")
     implicit val formats: Formats = JSONFormats.formats
     val bodyFuture = response.entity.dataBytes.runFold(""){ (prev, b) =>
       prev + b.utf8String
