@@ -20,7 +20,7 @@ import scala.concurrent.duration._
 
 case class LambdaHttpResponse(statusCode: Int, body: String, headers: Map[String, String])
 
-trait LambdaAkkaAdapter extends RequestHandler[String, String] {
+trait LambdaAkkaAdapter extends RequestHandler[InputStream, String] {
 
   val route: server.Route
   val actorMaterializer: ActorMaterializer
@@ -29,9 +29,8 @@ trait LambdaAkkaAdapter extends RequestHandler[String, String] {
 
 
 
-  def handleRequest(input: String, context: Context): String = {
+  def handleRequest(input: InputStream, context: Context): String = {
     implicit val formats: Formats = JSONFormats.formats
-    println(input)
     val amazonRequest = read[LambdaHttpRequest](input)
     val request = new LambdaRequestContextImpl(amazonRequest.normalize(), actorMaterializer)
 
