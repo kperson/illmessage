@@ -21,20 +21,17 @@ case class LambdaHttpResponse(statusCode: Int, body: String, headers: Map[String
 
 trait LambdaAkkaAdapter extends RequestStreamHandler {
 
-  def route: server.Route
-  def actorMaterializer: ActorMaterializer
+  val route: server.Route
+  val actorMaterializer: ActorMaterializer
+
 
   def handleRequest(input: InputStream, output: OutputStream, context: Context) {
     implicit val formats: Formats = JSONFormats.formats
 
     val source = scala.io.Source.fromInputStream(input).mkString
-    println(source)
 
     val amazonRequest = read[LambdaHttpRequest](source)
     val request = new LambdaRequestContextImpl(amazonRequest.normalize(), actorMaterializer)
-
-    println(amazonRequest)
-    println(request)
 
     try {
       route(request).onComplete {
