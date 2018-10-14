@@ -14,12 +14,12 @@ import scala.concurrent.ExecutionContext
 
 
 class LambdaInit extends LambdaAkkaAdapter {
-  
+
   val config = new AppConfig()
 
   implicit val system: ActorSystem = ActorSystem("app")
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
-  implicit val ec: ExecutionContext = materializer.executionContext
+  implicit val actorMaterializer: ActorMaterializer = ActorMaterializer()
+  implicit val ec: ExecutionContext = actorMaterializer.executionContext
 
   val dynamoClient = new DynamoClient(config.awsRegion)
   val wal = new WAL(dynamoClient, config.walTable)
