@@ -1,26 +1,26 @@
 package com.github.kperson.lambda
 
+import java.io._
+import java.nio.charset.StandardCharsets
+
 import akka.http.scaladsl.server
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.{LambdaRequestContextImpl, RejectionHandler}
 import akka.http.scaladsl.server.RouteResult.{Complete, Rejected}
 import akka.stream.ActorMaterializer
-
-import com.amazonaws.services.lambda.runtime.{Context, RequestHandler}
+import com.amazonaws.services.lambda.runtime.{Context, RequestHandler, RequestStreamHandler}
 import com.github.kperson.serialization.JSONFormats
-
-import java.io._
-
 import org.json4s.Formats
 import org.json4s.jackson.Serialization._
 
 import scala.concurrent.{Await, Future}
+import scala.util.Success
 import scala.concurrent.duration._
 
 
 case class LambdaHttpResponse(statusCode: Int, body: String, headers: Map[String, String])
 
-trait LambdaAkkaAdapter extends RequestHandler[InputStream, String] {
+trait LambdaAkkaAdapter extends RequestStreamHandler {
 
   val route: server.Route
   val actorMaterializer: ActorMaterializer
@@ -28,9 +28,9 @@ trait LambdaAkkaAdapter extends RequestHandler[InputStream, String] {
   import actorMaterializer.executionContext
 
 
-
-  def handleRequest(input: InputStream, context: Context): String = {
+  def handleRequest(input: InputStream, output: OutputStream, context: Context) {
     implicit val formats: Formats = JSONFormats.formats
+
     val amazonRequest = read[LambdaHttpRequest](input)
     val request = new LambdaRequestContextImpl(amazonRequest.normalize(), actorMaterializer)
 
@@ -59,12 +59,12 @@ trait LambdaAkkaAdapter extends RequestHandler[InputStream, String] {
           println(res)
           println(actorMaterializer)
           complete(res)(actorMaterializer)
-      }.recoverWith { case _ =>
+      }.recoverWith {
         println("6....................................")
         complete(HttpResponse(500))(actorMaterializer)
       }
-      Await.result(f, 20.seconds)
-
+      val str = Await.result(f, 20.seconds)
+      output.write(str)
 
     }
     catch {
@@ -74,7 +74,8 @@ trait LambdaAkkaAdapter extends RequestHandler[InputStream, String] {
         ex.printStackTrace(new PrintWriter(errors))
         println(errors.toString)
         val f = complete(HttpResponse(500))(actorMaterializer)
-        Await.result(f, 20.seconds)
+        val str = Await.result(f, 20.seconds)
+        output.write(str)
     }
   }
 
