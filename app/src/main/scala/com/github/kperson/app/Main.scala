@@ -3,7 +3,7 @@ package com.github.kperson.app
 import java.io.{ByteArrayInputStream, FileOutputStream}
 
 
-object Main extends App {
+object Main  {
 
   import Init._
 
