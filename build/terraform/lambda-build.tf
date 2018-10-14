@@ -27,7 +27,7 @@ resource "aws_lambda_function" "api" {
       DEAD_LETTER_TABLE = "${aws_dynamodb_table.dead_letter_queue.id}"
       WAL_TABLE         = "${aws_dynamodb_table.write_ahead_log.id}"
       AWS_BUCKET        = "TODO"
-      AWS_REGION        = "${var.region}"
+      REGION            = "${var.region}"
     }
   }
 }
