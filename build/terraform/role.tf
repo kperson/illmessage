@@ -34,7 +34,7 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
 
     resources = [
       "${aws_s3_bucket.subscription.arn}/*",
-      "${aws_s3_bucket.subscription.arn}"
+      "${aws_s3_bucket.subscription.arn}",
     ]
   }
 
