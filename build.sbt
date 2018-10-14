@@ -17,6 +17,7 @@ lazy val app = (project in file("app")).
    fork in run := true,
     assemblyMergeStrategy in assembly := {
       case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case PathList("reference.conf") => MergeStrategy.concat
       case _ => MergeStrategy.first
     }
   ).
