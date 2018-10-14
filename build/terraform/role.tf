@@ -11,7 +11,6 @@ data "aws_iam_policy_document" "tasks_assume_role_policy_doc" {
 }
 
 data "aws_iam_policy_document" "tasks_role_policy_doc" {
-
   statement {
     actions = [
       "dynamodb:GetItem",

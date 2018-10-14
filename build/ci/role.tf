@@ -15,6 +15,30 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
   statement {
     actions = [
+      "lambda:CreateFunction",
+      "lambda:CreateEventSourceMapping",
+      "lambda:GetEventSourceMapping",
+      "lambda:ListEventSourceMappings",
+      "lambda:UpdateEventSourceMapping",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+
+  statement {
+    actions = [
+      "lambda:*",
+    ]
+
+    resources = [
+      "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function/${var.namespace}_*",
+    ]
+  }
+
+  statement {
+    actions = [
       "dynamodb:*",
     ]
 
@@ -38,7 +62,7 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
 
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.namespace}_",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.namespace}_*",
     ]
   }
 

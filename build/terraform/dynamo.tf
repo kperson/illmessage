@@ -57,14 +57,14 @@ resource "aws_dynamodb_table" "write_ahead_log" {
 
 module "scale_write_ahead_log" {
   source     = "../modules/dynamo-scale"
-    namespace = "${var.namespace}"
+  namespace  = "${var.namespace}"
   table_name = "${aws_dynamodb_table.write_ahead_log.id}"
   table_arn  = "${aws_dynamodb_table.write_ahead_log.arn}"
 }
 
 module "scale_dead_letter_queue" {
   source     = "../modules/dynamo-scale"
-  namespace = "${var.namespace}"
+  namespace  = "${var.namespace}"
   table_name = "${aws_dynamodb_table.dead_letter_queue.id}"
   table_arn  = "${aws_dynamodb_table.dead_letter_queue.arn}"
 }
