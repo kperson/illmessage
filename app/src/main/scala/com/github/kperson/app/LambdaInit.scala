@@ -8,7 +8,9 @@ import com.github.kperson.lambda.LambdaAkkaAdapter
 
 class LambdaInit extends LambdaAkkaAdapter {
 
-  lazy val actorMaterializer: ActorMaterializer = Init.materializer
-  lazy val route: server.Route = Init.api.route
+  import Init._
+
+  lazy val actorMaterializer: ActorMaterializer = materializer
+  lazy val route: server.Route = api.route
 
 }

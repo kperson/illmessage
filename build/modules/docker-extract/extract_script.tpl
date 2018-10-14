@@ -1,0 +1,1 @@
+docker run --rm -v ${out_dir}:/my_export_out -v /var/run/docker.sock:/var/run/docker.sock ${tag} cp ${container_file} /my_export_out/${output_file}

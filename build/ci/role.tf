@@ -86,19 +86,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     effect = "Allow"
 
     actions = [
-      "logs:*",
-    ]
-
-    resources = [
-      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.namespace}:*",
-      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.namespace}",
-    ]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
       "logs:DescribeLogGroups",
     ]
 
@@ -133,27 +120,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     resources = ["arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:network-interface/*"]
   }
 
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "ecr:GetAuthorizationToken",
-      "ecr:CreateRepository",
-      "ecr:DescribeRepositories",
-    ]
-
-    resources = ["*"]
-  }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "ecr:*",
-    ]
-
-    resources = ["arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/${var.namespace}_*"]
-  }
 }
 
 resource "aws_iam_role" "codebuild" {
