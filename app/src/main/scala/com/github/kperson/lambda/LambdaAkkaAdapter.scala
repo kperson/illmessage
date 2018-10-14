@@ -1,6 +1,6 @@
 package com.github.kperson.lambda
 
-import java.io.{InputStream, OutputStream, OutputStreamWriter}
+import java.io._
 import java.nio.charset.StandardCharsets
 
 import akka.http.scaladsl.server
@@ -25,7 +25,6 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
   def actorMaterializer: ActorMaterializer
 
   def handleRequest(input: InputStream, output: OutputStream, context: Context) {
-    println("1....................................")
     implicit val formats: Formats = JSONFormats.formats
 
     val source = scala.io.Source.fromInputStream(input).mkString
@@ -40,8 +39,10 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
     try {
       route(request).onComplete {
         case Success(Rejected(l)) =>
+          println("8....................................")
           RejectionHandler.default(l) match {
             case Some(rejectHandler) =>
+              println("9....................................")
               rejectHandler(request).onComplete {
                 case Success(Complete(res)) =>
                   println("2....................................")
@@ -65,7 +66,10 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
     }
     catch {
       case ex: Throwable =>
-        ex.printStackTrace()
+        println("ERROR..................................")
+        val errors = new StringWriter()
+        ex.printStackTrace(new PrintWriter(errors))
+        println(errors.toString)
         complete(HttpResponse(500), output)(actorMaterializer)
     }
   }
