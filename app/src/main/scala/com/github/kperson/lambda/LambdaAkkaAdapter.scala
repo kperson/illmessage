@@ -1,6 +1,7 @@
 package com.github.kperson.lambda
 
-import java.io.{InputStream, OutputStream}
+import java.io.{InputStream, OutputStream, OutputStreamWriter}
+import java.nio.charset.StandardCharsets
 
 import akka.http.scaladsl.server
 import akka.http.scaladsl.model.HttpResponse
@@ -59,8 +60,10 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
 
     bodyFuture.foreach { body =>
       val lambdaResponse = LambdaHttpResponse(response.status.intValue, body, headers)
-      output.write(write(lambdaResponse).getBytes)
-      output.close()
+      println(write(lambdaResponse))
+      val writer = new OutputStreamWriter(out, StandardCharsets.UTF_8.name)
+      writer.write(write(lambdaResponse))
+      writer.close()
     }
   }
 
