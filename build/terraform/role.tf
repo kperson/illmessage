@@ -26,6 +26,18 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "${aws_dynamodb_table.write_ahead_log.arn}",
     ]
   }
+
+  statement {
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+    ]
+
+    resources = [
+      "${aws_s3_bucket.subscription.arn}/*",
+      "${aws_s3_bucket.subscription.arn}"
+    ]
+  }
 }
 
 resource "aws_iam_policy" "tasks_policy" {

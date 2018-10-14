@@ -49,18 +49,7 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
   statement {
     actions = [
-      "iam:CreateRole",
-      "iam:PassRole",
-      "iam:GetRole",
-      "iam:DeleteRole",
-      "iam:DeleteRolePolicy",
-      "iam:GetRolePolicy",
-      "iam:ListAttachedRolePolicies",
-      "iam:ListRolePolicies",
-      "iam:PutRolePolicy",
-      "iam:UpdateAssumeRolePolicy",
-      "iam:UpdateRole",
-      "iam:UpdateRoleDescription",
+      "iam:*",
     ]
 
     resources = [
@@ -70,14 +59,7 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
   statement {
     actions = [
-      "iam:CreatePolicy",
-      "iam:CreatePolicyVersion",
-      "iam:DeletePolicy",
-      "iam:DeletePolicyVersion",
-      "iam:GetPolicy",
-      "iam:GetPolicyVersion",
-      "iam:ListPolicyVersions",
-      "iam:SetDefaultPolicyVersion",
+      "iam:*",
     ]
 
     resources = [
@@ -94,6 +76,18 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
       "*",
     ]
   }
+
+
+  statement {
+    actions = [
+      "s3:CreateBucket",
+    ]
+
+    resources = [
+      "arn:aws:s3:::${var.namespace}_*",
+    ]
+  }
+  
 
 
   # Code build

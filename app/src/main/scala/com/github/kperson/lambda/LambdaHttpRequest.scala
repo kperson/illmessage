@@ -75,12 +75,13 @@ case class LambdaHttpRequest(
     }.toList
 
     val contentTypeStr = headers
-      .find { case (k, _) if k.toLowerCase() == "content-type" => true }
+      .find { case (k, _) => k.toLowerCase() == "content-type" }
       .map { case (_, v)  => v }
       .getOrElse("application/octet-stream")
+
     val contentType = ContentType.parse(contentTypeStr) match {
-      case Right(c) => Some(c)
-      case _ if body.isDefined => Some(ContentTypes.`application/octet-stream`)
+      case Right(c) if bodyOrEmpty.nonEmpty => Some(c)
+      case _ if bodyOrEmpty.nonEmpty => Some(ContentTypes.`application/octet-stream`)
       case _ => None
     }
 
