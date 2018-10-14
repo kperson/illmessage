@@ -30,19 +30,26 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
     val amazonRequest = read[LambdaHttpRequest](input)
     val request = new LambdaRequestContextImpl(amazonRequest.normalize(), actorMaterializer)
 
-    route(request).onComplete {
-      case Success(Rejected(l)) =>
-        RejectionHandler.default(l) match {
-          case Some(rejectHandler) =>
-            rejectHandler(request).onComplete {
-              case Success(Complete(res)) => complete(res, output)(actorMaterializer)
+    try {
+      route(request).onComplete {
+        case Success(Rejected(l)) =>
+          RejectionHandler.default(l) match {
+            case Some(rejectHandler) =>
+              rejectHandler(request).onComplete {
+                case Success(Complete(res)) => complete(res, output)(actorMaterializer)
 
-              case _ => complete(HttpResponse(500), output)(actorMaterializer)
-            }
-          case _ => complete(HttpResponse(500), output)(actorMaterializer)
-        }
-      case Success(Complete(res)) => complete(res, output)(actorMaterializer)
-      case _ => complete(HttpResponse(500), output)(actorMaterializer)
+                case _ => complete(HttpResponse(500), output)(actorMaterializer)
+              }
+            case _ => complete(HttpResponse(500), output)(actorMaterializer)
+          }
+        case Success(Complete(res)) => complete(res, output)(actorMaterializer)
+        case _ => complete(HttpResponse(500), output)(actorMaterializer)
+      }
+    }
+    catch {
+      case ex: Throwable =>
+        ex.printStackTrace()
+        complete(HttpResponse(500), output)(actorMaterializer)
     }
   }
 
