@@ -84,7 +84,7 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
 
     resources = [
-      "arn:aws:s3:::${var.namespace}_*",
+      "arn:aws:s3:::${var.namespace}-*",
     ]
   }
   
