@@ -59,12 +59,12 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
           println(res)
           println(actorMaterializer)
           complete(res)(actorMaterializer)
-      }.recoverWith {
+      }.recoverWith { case _ =>
         println("6....................................")
         complete(HttpResponse(500))(actorMaterializer)
       }
       val str = Await.result(f, 20.seconds)
-      output.write(str)
+      output.write(str.getBytes(StandardCharsets.UTF_8))
 
     }
     catch {
@@ -75,7 +75,7 @@ trait LambdaAkkaAdapter extends RequestStreamHandler {
         println(errors.toString)
         val f = complete(HttpResponse(500))(actorMaterializer)
         val str = Await.result(f, 20.seconds)
-        output.write(str)
+        output.write(str.getBytes(StandardCharsets.UTF_8))
     }
   }
 
