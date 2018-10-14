@@ -4,8 +4,6 @@ phases:
   pre_build:
     commands:
       - cd build/terraform
-      - echo 'Logging in to ECR...'
-      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
       - echo 'Installing terraform...'
       - wget -O terraform.zip $TERRAFORM_ZIP_URL
       - unzip terraform.zip
