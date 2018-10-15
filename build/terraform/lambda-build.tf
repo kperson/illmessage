@@ -31,3 +31,32 @@ resource "aws_lambda_function" "api" {
     }
   }
 }
+
+resource "aws_lambda_function" "_processor" {
+  filename         = "${module.extract_jar.output_file}"
+  function_name    = "${var.namespace}_processor"
+  role             = "${aws_iam_role.tasks_role.arn}"
+  handler          = "com.github.kperson.app.MessageProcessor"
+  runtime          = "java8"
+  memory_size      = 512
+  timeout          = 20
+  publish          = true
+  source_code_hash = "${base64sha256(file(module.extract_jar.output_file))}"
+
+  environment {
+    variables = {
+      DEAD_LETTER_TABLE = "${aws_dynamodb_table.dead_letter_queue.id}"
+      WAL_TABLE         = "${aws_dynamodb_table.write_ahead_log.id}"
+      AWS_BUCKET        = "${aws_s3_bucket.subscription.id}"
+      REGION            = "${var.region}"
+    }
+  }
+}
+
+resource "aws_lambda_event_source_mapping" "change_capture" {
+  batch_size        = 100
+  event_source_arn  = "${aws_dynamodb_table.write_ahead_log.stream_arn}"
+  enabled           = true
+  function_name     = "${aws_lambda_function.change_capture.arn}"
+  starting_position = "LATEST"
+}

@@ -52,7 +52,9 @@ resource "aws_dynamodb_table" "write_ahead_log" {
     enabled = true
   }
 
-  stream_enabled = false
+  stream_enabled = true
+
+  stream_view_type = "NEW_AND_OLD_IMAGES"
 }
 
 module "scale_write_ahead_log" {

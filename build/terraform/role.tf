@@ -13,6 +13,24 @@ data "aws_iam_policy_document" "tasks_assume_role_policy_doc" {
 data "aws_iam_policy_document" "tasks_role_policy_doc" {
   statement {
     actions = [
+      "dynamodb:DescribeStream",
+      "dynamodb:GetRecords",
+      "dynamodb:GetShardIterator",
+    ]
+
+    resources = ["${aws_dynamodb_table.write_ahead_log.stream_arn}"]
+  }
+
+  statement {
+    actions = [
+      "dynamodb:ListStreams",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
       "dynamodb:GetItem",
       "dynamodb:PutItem",
       "dynamodb:BatchWriteItem",
