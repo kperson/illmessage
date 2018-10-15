@@ -22,7 +22,6 @@ class WAL(client: DynamoClient, walTable: String) {
   implicit val defaultFormats: Formats = JSONFormats.formats
 
   private val maxWriteScheduleDelay = 6.seconds
-  private var writeNum = 0
 
   import client.ec
 
@@ -32,14 +31,11 @@ class WAL(client: DynamoClient, walTable: String) {
   }
 
   def writeWithSubscription(messagesSubscriptions: List[(Message, Option[MessageSubscription])]): Future[List[String]] = {
-    writeNum = if(writeNum == 9999999) 0 else writeNum + 1
-    val batchId = UUID.randomUUID().toString.replace("-", "")
-    val listWithIndex = messagesSubscriptions.zip(0L until messagesSubscriptions.size.toLong)
-    val transactionGroups = listWithIndex.map { case ((message, subscriptions), index) =>
+    val transactionGroups = messagesSubscriptions.map { case (message, subscriptions) =>
       val timestamp = "%014d".format(System.currentTimeMillis())
-      val insertNum = "%09d".format(index)
-      val writeNumFormat =  "%07d".format(writeNum)
-      WALRecord(message, s"$timestamp-$writeNumFormat-$insertNum-$batchId", subscriptions)
+      val randomId = UUID.randomUUID().toString.replace("-", "")
+      val messageId = s"$timestamp-$randomId"
+      WALRecord(message, messageId, subscriptions)
     }.grouped(25).toList
     Future.sequence(transactionGroups.map { writeWALRecords(_) })
     .map { _ =>

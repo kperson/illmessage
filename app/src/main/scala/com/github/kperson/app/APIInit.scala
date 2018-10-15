@@ -12,7 +12,7 @@ import com.github.kperson.wal.WAL
 import scala.concurrent.ExecutionContext
 
 
-trait Init {
+trait APIInit {
 
   val config = new AppConfig()
 

@@ -43,11 +43,6 @@ trait MessageAPI extends MarshallingSupport {
             }
           }
         }
-      } ~ get {
-        parameters('color) { (color) =>
-          println(color)
-          complete(color)
-        }
       }
     }
   }
