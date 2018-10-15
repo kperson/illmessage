@@ -32,7 +32,7 @@ resource "aws_lambda_function" "api" {
   }
 }
 
-resource "aws_lambda_function" "_processor" {
+resource "aws_lambda_function" "processor" {
   filename         = "${module.extract_jar.output_file}"
   function_name    = "${var.namespace}_processor"
   role             = "${aws_iam_role.tasks_role.arn}"
@@ -53,10 +53,10 @@ resource "aws_lambda_function" "_processor" {
   }
 }
 
-resource "aws_lambda_event_source_mapping" "change_capture" {
+resource "aws_lambda_event_source_mapping" "processor" {
   batch_size        = 100
   event_source_arn  = "${aws_dynamodb_table.write_ahead_log.stream_arn}"
   enabled           = true
-  function_name     = "${aws_lambda_function.change_capture.arn}"
+  function_name     = "${aws_lambda_function.processor.arn}"
   starting_position = "LATEST"
 }
