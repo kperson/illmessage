@@ -1,16 +1,14 @@
-package com.github.kperson.app
+package com.github.kperson.api
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-
-import com.github.kperson.api.API
+import com.github.kperson.app.AppConfig
 import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.aws.s3.S3Client
 import com.github.kperson.dao.AmazonSubscriptionDAO
 import com.github.kperson.wal.WAL
 
 import scala.concurrent.ExecutionContext
-
 
 trait APIInit {
 

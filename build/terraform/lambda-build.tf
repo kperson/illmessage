@@ -15,7 +15,7 @@ resource "aws_lambda_function" "api" {
   filename         = "${module.extract_jar.output_file}"
   function_name    = "${var.namespace}_api"
   role             = "${aws_iam_role.tasks_role.arn}"
-  handler          = "com.github.kperson.app.LambdaAPIInit"
+  handler          = "com.github.kperson.api.LambdaAPIInit"
   runtime          = "java8"
   memory_size      = 512
   timeout          = 20
@@ -29,6 +29,7 @@ resource "aws_lambda_function" "api" {
       AWS_BUCKET        = "${aws_s3_bucket.subscription.id}"
       REGION            = "${var.region}"
       LOG_LEVEL         = "INFO"
+
     }
   }
 }
@@ -37,7 +38,7 @@ resource "aws_lambda_function" "processor" {
   filename         = "${module.extract_jar.output_file}"
   function_name    = "${var.namespace}_processor"
   role             = "${aws_iam_role.tasks_role.arn}"
-  handler          = "com.github.kperson.app.MessageProcessor"
+  handler          = "com.github.kperson.processor.MessageProcessorImpl"
   runtime          = "java8"
   memory_size      = 512
   timeout          = 20

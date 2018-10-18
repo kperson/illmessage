@@ -1,4 +1,4 @@
-package com.github.kperson.app
+package com.github.kperson.api
 
 import akka.http.scaladsl.server.Route
 import com.github.kperson.lambda.LambdaAkkaAdapter
