@@ -28,6 +28,7 @@ resource "aws_lambda_function" "api" {
       WAL_TABLE         = "${aws_dynamodb_table.write_ahead_log.id}"
       AWS_BUCKET        = "${aws_s3_bucket.subscription.id}"
       REGION            = "${var.region}"
+      LOG_LEVEL         = "INFO"
     }
   }
 }
