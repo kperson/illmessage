@@ -25,6 +25,6 @@ trait APIInit {
   val subscriptionDAO: SubscriptionDAO = new AmazonSubscriptionDAO(dynamoClient, config.subscriptionTable)
   val deadLetterQueue = new DeadLetterQueue(dynamoClient, config.deadLetterTable, wal)
 
-  val api = new API(wal, subscriptionDAO)
+  val api = new API(wal, subscriptionDAO, deadLetterQueue)
 
 }

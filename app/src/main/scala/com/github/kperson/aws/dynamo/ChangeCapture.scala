@@ -2,7 +2,7 @@ package com.github.kperson.aws.dynamo
 
 sealed trait ChangeCapture[T] {
 
-  def map[Q](func: (T) => Q): ChangeCapture[Q]
+  def map[Q](func: T => Q): ChangeCapture[Q]
 
   def eventType: String = {
     this match {
@@ -20,7 +20,7 @@ case class New[T](
   item: T
 ) extends ChangeCapture[T] {
 
-  def map[Q](func: (T) => Q) = New(eventSource, func(item))
+  def map[Q](func: T => Q) = New(eventSource, func(item))
 
 }
 
@@ -29,7 +29,7 @@ case class Delete[T](
   item: T
 ) extends ChangeCapture[T] {
 
-  def map[Q](func: (T) => Q) = Delete(eventSource, func(item))
+  def map[Q](func: T => Q) = Delete(eventSource, func(item))
 
 }
 
@@ -40,6 +40,6 @@ case class Update[T](
   newItem: T
 ) extends ChangeCapture[T] {
 
-  def map[Q](func: (T) => Q) = Update(eventSource, func(oldItem), func(newItem))
+  def map[Q](func: T => Q) = Update(eventSource, func(oldItem), func(newItem))
 
 }

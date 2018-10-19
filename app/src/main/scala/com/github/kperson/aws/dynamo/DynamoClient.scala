@@ -2,15 +2,16 @@ package com.github.kperson.aws.dynamo
 
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.github.kperson.aws.{AWSHttpResponse, Credentials, HttpRequest}
+
 import java.nio.charset.StandardCharsets
 
 import org.json4s.{Extraction, Formats, NoTypeHints}
 import org.json4s.jackson.Serialization
 import org.json4s.jackson.Serialization._
-import org.json4s.jackson.JsonMethods._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.Manifest
+
 import DynamoSerialization._
 
 
@@ -23,10 +24,10 @@ class DynamoClient(
   credentialsProvider: AWSCredentialsProvider = Credentials.defaultCredentialsProvider
 ) (implicit val ec: ExecutionContext) {
 
-  private val defaultFormats = Serialization.formats(NoTypeHints)
+  private val defaultFormats: Formats = Serialization.formats(NoTypeHints)
 
   private def mapToDynamoMap(map: Map[String, Any]): DynamoMap = {
-    val defaultFormats = Serialization.formats(NoTypeHints)
+    val defaultFormats: Formats = Serialization.formats(NoTypeHints)
     val expressionAttributesJSON = Extraction.decompose(map)(defaultFormats)
     expressionAttributesJSON.rawToDynamo.get.asInstanceOf[DynamoMap]
   }

@@ -2,7 +2,7 @@ package com.github.kperson.processor
 
 import com.github.kperson.api.APIInit
 import com.github.kperson.aws.sqs.SQSClient
-import com.github.kperson.deadletter.{DeadLetterMessage, DeadLetterQueue}
+import com.github.kperson.deadletter.{DeadLetterMessage}
 import com.github.kperson.model.MessageSubscription
 import com.github.kperson.wal.WALRecord
 

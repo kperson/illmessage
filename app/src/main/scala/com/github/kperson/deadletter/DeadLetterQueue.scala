@@ -1,7 +1,5 @@
 package com.github.kperson.deadletter
 
-import java.util.UUID
-
 import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.model.{Message, MessageSubscription}
 import com.github.kperson.serialization.JSONFormats
@@ -10,7 +8,6 @@ import com.github.kperson.wal.WAL
 import org.json4s.Formats
 
 import scala.concurrent.Future
-import scala.util.Success
 
 
 case class DeadLetterMessage(
@@ -40,14 +37,12 @@ class DeadLetterQueue(client: DynamoClient, table: String, wal: WAL) {
     base: List[(String, Message)] = List.empty,
     lastEvaluatedKey: Option[Map[String, Any]] = None,
     currentTime: Option[Long] = None,
-    batchId: Option[String] = None
   ): Future[List[(String, Message)]] = {
-    val bId = batchId.getOrElse(UUID.randomUUID().toString.replace("-", ""))
     val t = currentTime.getOrElse(System.currentTimeMillis)
     val f = client.query[DeadLetterMessage](
       table,
       "subscriptionId = :subscriptionId",
-      filterExpression = Some(":insertedAt < :time"),
+      filterExpression = Some("insertedAt < :time"),
       expressionAttributeValues = Map(":subscriptionId" -> subscription.id, ":time" -> t),
       lastEvaluatedKey = lastEvaluatedKey,
       limit = 300,
@@ -61,9 +56,10 @@ class DeadLetterQueue(client: DynamoClient, table: String, wal: WAL) {
         val walInsert = group.map { case (m, s, _) => (m, Some(s)) }
         //move the records to wal
         wal.writeWithSubscription(walInsert)
-        .andThen { case Success(_) =>
+        .map { rs =>
           //delete the records from the dead letter queue
           deleteKeys(group.map { case (_, s, mId) => Map("subscriptionId" -> s.id, "messageId" -> mId) })
+          rs
         }
       }
       Future.sequence(transfers).map { groupedTransfers =>
@@ -72,7 +68,7 @@ class DeadLetterQueue(client: DynamoClient, table: String, wal: WAL) {
     }.flatMap { case (records, lek) =>
       val newBase = base ++ records
       lek match {
-        case key @ Some(_) => loadToWAL(subscription, newBase, key, Some(t), Some(bId))
+        case key @ Some(_) => loadToWAL(subscription, newBase, key, Some(t))
         case _ => Future.successful(newBase)
       }
     }

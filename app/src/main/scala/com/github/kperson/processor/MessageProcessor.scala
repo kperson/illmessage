@@ -48,7 +48,11 @@ trait MessageProcessor extends StreamChangeCaptureHandler with MessageProcessorD
         logger.info(s"received new record, $record")
         val f = for {
           _ <- removeWALRecord(record)
-          allSubscriptions <- fetchSubscriptions(record.message.exchange, record.message.routingKey)
+          allSubscriptions <- {
+            record.preComputedSubscription
+              .map { x => Future.successful(List(x)) }
+              .getOrElse(fetchSubscriptions(record.message.exchange, record.message.routingKey))
+          }
           rs <- sendMessages(allSubscriptions, record)
         } yield rs
         Await.result(f, 30.seconds)

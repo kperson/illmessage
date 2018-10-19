@@ -1,10 +1,11 @@
 package com.github.kperson.aws.lambda
 
+import com.amazonaws.services.lambda.runtime.{Context, RequestStreamHandler}
+
 import java.io.{ByteArrayInputStream, InputStream, OutputStream}
 import java.nio.charset.StandardCharsets
 
-import com.amazonaws.services.lambda.runtime.{Context, RequestStreamHandler}
-import org.json4s.NoTypeHints
+import org.json4s.{Formats, NoTypeHints}
 import org.json4s.jackson.Serialization
 import org.json4s.jackson.JsonMethods._
 import org.json4s.jackson.Serialization.write
@@ -20,7 +21,7 @@ object JSON {
   implicit class ToJSON[A <: AnyRef](self: A) {
 
     def toJSONStr: String = {
-      val formats = Serialization.formats(NoTypeHints)
+      val formats: Formats = Serialization.formats(NoTypeHints)
       write(parse(write(self)(formats)))(formats)
     }
 
@@ -32,7 +33,7 @@ object JSON {
   implicit class FromJSONInputStream(self: InputStream) {
 
     def extract[A](camelize: Boolean)(implicit mf: scala.reflect.Manifest[A]): A = {
-      val formats = Serialization.formats(NoTypeHints)
+      val formats: Formats = Serialization.formats(NoTypeHints)
       if (camelize) {
         parse(self).camelizeKeys.extract[A](formats, mf)
       }
