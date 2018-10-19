@@ -1,4 +1,4 @@
-package com.github.kperson.dao
+package com.github.kperson.subscription
 
 import com.github.kperson.model.MessageSubscription
 import com.github.kperson.aws.dynamo.DynamoClient

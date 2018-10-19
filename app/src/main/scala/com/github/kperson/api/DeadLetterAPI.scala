@@ -2,7 +2,7 @@ package com.github.kperson.api
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
-import com.github.kperson.dao.SubscriptionDAO
+import com.github.kperson.subscription.SubscriptionDAO
 import com.github.kperson.model.MessageSubscription
 
 trait DeadLetterAPI extends MarshallingSupport {

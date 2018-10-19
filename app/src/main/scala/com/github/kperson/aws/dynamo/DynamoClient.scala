@@ -202,7 +202,8 @@ class DynamoClient(
      indexName: Option[String] = None,
      scanIndexForward: Boolean = true,
      limit: Int = 100,
-     convertFromSnakeCase: Boolean = false
+     convertFromSnakeCase: Boolean = false,
+     projection: Option[List[String]] = None
    )(implicit formats: Formats, mf: Manifest[A]): Future[DynamoPagedResults[A]] = {
     val payloadOpt: Map[String, Option[Any]] = Map(
       "TableName" -> Some(table),
@@ -214,7 +215,8 @@ class DynamoClient(
       "ExpressionAttributeNames" -> (if(expressionAttributeNames.isEmpty) None else Some(expressionAttributeNames)),
       "ScanIndexForward" -> Some(scanIndexForward),
       "FilterExpression" -> filterExpression,
-      "LastEvaluatedKey" -> lastEvaluatedKey
+      "LastEvaluatedKey" -> lastEvaluatedKey,
+      "ProjectionExpression" -> projection.map { _.mkString(", ") }
     )
     val bodyParams = payloadOpt.collect {
       case (k, Some(v)) => (k, v)

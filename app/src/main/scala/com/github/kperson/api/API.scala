@@ -5,7 +5,7 @@ import akka.http.scaladsl.{server, Http}
 import akka.stream.Materializer
 import akka.http.scaladsl.server.Directives._
 
-import com.github.kperson.dao.SubscriptionDAO
+import com.github.kperson.subscription.SubscriptionDAO
 import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.wal.WAL
 

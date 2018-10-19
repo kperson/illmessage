@@ -5,7 +5,7 @@ import akka.stream.ActorMaterializer
 
 import com.github.kperson.app.AppConfig
 import com.github.kperson.aws.dynamo.DynamoClient
-import com.github.kperson.dao.{AmazonSubscriptionDAO, SubscriptionDAO}
+import com.github.kperson.subscription.{AmazonSubscriptionDAO, SubscriptionDAO}
 import com.github.kperson.wal.WAL
 
 import scala.concurrent.ExecutionContext

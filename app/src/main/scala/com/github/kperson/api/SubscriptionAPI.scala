@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 
 import com.github.kperson.model.MessageSubscription
-import com.github.kperson.dao.SubscriptionDAO
+import com.github.kperson.subscription.SubscriptionDAO
 
 
 trait SubscriptionAPI extends MarshallingSupport {

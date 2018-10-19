@@ -37,6 +37,7 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "dynamodb:BatchGetItem",
       "dynamodb:DeleteItem",
       "dynamodb:Scan",
+      "dynamodb:Query",
     ]
 
     resources = [
