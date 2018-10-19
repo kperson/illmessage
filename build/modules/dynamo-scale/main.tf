@@ -5,7 +5,7 @@ variable "table_arn" {}
 variable "namespace" {}
 
 variable "max_capacity" {
-  default = 5000
+  default = 10000
 }
 
 data "aws_iam_policy_document" "scale_policy_doc" {
@@ -59,7 +59,7 @@ resource "aws_iam_role_policy" "scale_policy" {
 
 resource "aws_appautoscaling_target" "read_target" {
   max_capacity       = "${var.max_capacity}"
-  min_capacity       = 5
+  min_capacity       = 3
   resource_id        = "table/${var.table_name}"
   role_arn           = "${aws_iam_role.scale_role.arn}"
   scalable_dimension = "dynamodb:table:ReadCapacityUnits"
