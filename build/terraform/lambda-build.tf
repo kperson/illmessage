@@ -24,11 +24,11 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      DEAD_LETTER_TABLE = "${aws_dynamodb_table.dead_letter_queue.id}"
-      WAL_TABLE         = "${aws_dynamodb_table.write_ahead_log.id}"
-      AWS_BUCKET        = "${aws_s3_bucket.subscription.id}"
-      REGION            = "${var.region}"
-      LOG_LEVEL         = "INFO"
+      DEAD_LETTER_TABLE  = "${aws_dynamodb_table.dead_letter_queue.id}"
+      WAL_TABLE          = "${aws_dynamodb_table.write_ahead_log.id}"
+      SUBSCRIPTION_TABLE = "${aws_dynamodb_table.subscriptions.id}"
+      REGION             = "${var.region}"
+      LOG_LEVEL          = "INFO"
     }
   }
 }
@@ -46,11 +46,11 @@ resource "aws_lambda_function" "processor" {
 
   environment {
     variables = {
-      DEAD_LETTER_TABLE = "${aws_dynamodb_table.dead_letter_queue.id}"
-      WAL_TABLE         = "${aws_dynamodb_table.write_ahead_log.id}"
-      AWS_BUCKET        = "${aws_s3_bucket.subscription.id}"
-      REGION            = "${var.region}"
-      LOG_LEVEL         = "INFO"
+      DEAD_LETTER_TABLE  = "${aws_dynamodb_table.dead_letter_queue.id}"
+      WAL_TABLE          = "${aws_dynamodb_table.write_ahead_log.id}"
+      SUBSCRIPTION_TABLE = "${aws_dynamodb_table.subscriptions.id}"
+      REGION             = "${var.region}"
+      LOG_LEVEL          = "INFO"
     }
   }
 }

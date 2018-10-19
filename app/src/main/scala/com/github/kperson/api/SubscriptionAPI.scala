@@ -19,19 +19,13 @@ trait SubscriptionAPI extends MarshallingSupport {
           pathPrefix("binding-key" / Segment) { bindingKey =>
             path("queue" / Segment) { queue =>
               val subscription = MessageSubscription(exchange, bindingKey, queue, accountId)
-              get {
-                onSuccess(subscriptionDAO.fetch(subscription.id)) {
-                  case Some(sub) => complete((StatusCodes.OK, sub))
-                  case _ => complete((StatusCodes.NotFound, None))
-                }
-              } ~
               post {
                 onSuccess(subscriptionDAO.save(subscription)) { sub =>
                   complete((StatusCodes.OK, sub))
                 }
               } ~
               delete {
-                onSuccess(subscriptionDAO.delete(subscription.id)) {
+                onSuccess(subscriptionDAO.delete(exchange, subscription.id)) {
                   case Some(sub) => complete((StatusCodes.OK, sub))
                   case _ => complete((StatusCodes.NotFound, None))
                 }

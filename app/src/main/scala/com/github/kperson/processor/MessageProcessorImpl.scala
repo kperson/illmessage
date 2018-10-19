@@ -20,7 +20,9 @@ class MessageProcessorImpl extends MessageProcessor with APIInit {
     wal.remove(record.messageId, record.message.partitionKey)
   }
 
-  def subscriptions: Future[List[MessageSubscription]] = subscriptionDAO.fetchAllSubscriptions()
+  def fetchSubscriptions(exchange: String, routingKey: String): Future[List[MessageSubscription]] = {
+    subscriptionDAO.fetchSubscriptions(exchange, routingKey)
+  }
 
   def sendMessage(
     queueName: String,

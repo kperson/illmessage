@@ -57,7 +57,6 @@ resource "aws_dynamodb_table" "write_ahead_log" {
   stream_view_type = "NEW_AND_OLD_IMAGES"
 }
 
-
 resource "aws_dynamodb_table" "subscriptions" {
   name           = "${var.namespace}_subscriptions"
   read_capacity  = 5
@@ -80,7 +79,6 @@ resource "aws_dynamodb_table" "subscriptions" {
   }
 
   stream_enabled = false
-
 }
 
 module "scale_write_ahead_log" {

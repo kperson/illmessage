@@ -1,65 +1,61 @@
 package com.github.kperson.dao
 
-import com.github.kperson.aws.s3.S3Client
 import com.github.kperson.model.MessageSubscription
-import com.github.kperson.aws.AWSError
+import com.github.kperson.aws.dynamo.DynamoClient
+import com.github.kperson.serialization.JSONFormats
+import org.json4s.Formats
 
-import java.nio.charset.StandardCharsets
-
-import org.json4s.NoTypeHints
-import org.json4s.jackson.Serialization
-import org.json4s.jackson.Serialization._
-
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration._
-import scala.concurrent.stm.{atomic, Ref}
+import scala.concurrent.{ExecutionContext, Future}
 
 
-class AmazonSubscriptionDAO(bucket: String, s3Client: S3Client)(implicit ec: ExecutionContext) extends SubscriptionDAO {
+class AmazonSubscriptionDAO(client: DynamoClient, table: String)(implicit ec: ExecutionContext) extends SubscriptionDAO {
 
-  implicit val defaultFormats = Serialization.formats(NoTypeHints)
+  implicit val defaultFormats: Formats = JSONFormats.formats
 
-  private val subscriptions = Ref(Map[String, MessageSubscription]())
-  private val fileKey = "/subscriptions.json"
-
-  Await.result(load(), 7.seconds)
-
-  def fetch(subscriptionId: String): Future[Option[MessageSubscription]] = {
-    Future.successful(subscriptions.single.get.get(subscriptionId))
+  def fetchSubscriptions(exchange: String, routingKey: String): Future[List[MessageSubscription]] = {
+    fetch(exchange, routingKey)
   }
 
-  def fetchAllSubscriptions(): Future[List[MessageSubscription]] = {
-    Future.successful(subscriptions.single.get.values.toList)
-  }
-
-  def delete(subscriptionId: String): Future[Option[MessageSubscription]] = {
-    val (newSubscriptions, removed) = atomic { implicit tx =>
-      subscriptions.transformAndExtract { old =>
-        (old - subscriptionId, (old - subscriptionId, old.get(subscriptionId))) }
+  private def fetch(
+    exchange: String,
+    routingKey: String,
+    lastEvaluatedKey: Option[Map[String, Any]] = None,
+    base: List[MessageSubscription] = List.empty
+   ): Future[List[MessageSubscription]] = {
+    val routingKeyComponents: List[String] = routingKey.split("\\.").toList
+    val indexAndComponents = routingKeyComponents.indices.zip(routingKeyComponents)
+    val matchingFilter = indexAndComponents.map { case (index, _) =>
+      s"(bindingKeyComponents[$index] = :$index OR bindingKeyComponents[$index] = :star)"
+    }.mkString(" AND ")
+    val filter = s"bindingKeyComponentsSize = :componentsSize AND ($matchingFilter)"
+    val query = client.query[MessageSubscription](
+      table,
+      "exchange = :exchange",
+      Some(filter),
+      expressionAttributeValues = Map(
+        ":exchange" -> exchange,
+        ":star" -> "*",
+        ":componentsSize" -> routingKeyComponents.size
+      ) ++ indexAndComponents.map { case (index, key) =>
+        s":$index" -> key
+      }.toMap,
+      lastEvaluatedKey = lastEvaluatedKey
+    )
+    query.flatMap { rs =>
+      rs.lastEvaluatedKey match {
+        case Some(k) => fetch(exchange, routingKey, Some(k), base ++ rs.results)
+        case _ => Future.successful(base ++ rs.results)
+      }
     }
-    s3Client.put(bucket, fileKey, write(newSubscriptions).getBytes(StandardCharsets.UTF_8), contentType = "application/json")
-      .map { _ => removed }
+  }
+
+
+  def delete(exchange: String, subscriptionId: String): Future[Option[MessageSubscription]] = {
+    client.deleteItem[MessageSubscription](table, Map("exchange" -> exchange, "subscriptionId" -> subscriptionId))
   }
 
   def save(subscription: MessageSubscription): Future[MessageSubscription] = {
-    val newSubscriptions = atomic { implicit tx =>
-      subscriptions.transformAndGet { _ + (subscription.id -> subscription) }
-    }
-    val f = s3Client.put(bucket, fileKey, write(newSubscriptions).getBytes(StandardCharsets.UTF_8), contentType = "application/json")
-    f.map { _ => subscription }
-  }
-
-  private def load(): Future[Any] = {
-    s3Client.get(bucket, fileKey).map { f =>
-      read[Map[String, MessageSubscription]](new String(f.body, StandardCharsets.UTF_8))
-    }.recover {
-      case ex: AWSError if ex.response.status == 404 =>
-        Map[String, MessageSubscription]()
-    }.map { s =>
-      atomic { implicit tx =>
-        subscriptions.set(s)
-      }
-    }
+    client.putItem(table, subscription).map { _ => subscription }
   }
 
 }

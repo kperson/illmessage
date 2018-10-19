@@ -4,7 +4,6 @@ import com.github.kperson.aws.dynamo._
 import com.github.kperson.model.MessageSubscription
 import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.wal.WALRecord
-import com.github.kperson.routing.TopicMatching
 
 import org.json4s.jackson.Serialization._
 import org.json4s.Formats
@@ -16,7 +15,6 @@ import scala.concurrent.duration._
 
 trait MessageProcessorDependencies {
 
-  def subscriptions: Future[List[MessageSubscription]]
   def removeWALRecord(record: WALRecord): Future[Any]
   def sendMessage(
    queueName: String,
@@ -29,6 +27,8 @@ trait MessageProcessorDependencies {
 
 
   def saveDeadLetter(record: WALRecord, subscription: MessageSubscription, reason: String): Future[Any]
+
+  def fetchSubscriptions(exchange: String, routingKey: String): Future[List[MessageSubscription]]
 
 }
 
@@ -46,11 +46,8 @@ trait MessageProcessor extends StreamChangeCaptureHandler with MessageProcessorD
       case New(_, item) =>
         val record = read[WALRecord](write(item))
         logger.info(s"received new record, $record")
-        val f = subscriptions.flatMap { allSubscriptions =>
-           val sends = allSubscriptions.filter { sub: MessageSubscription =>
-            sub.exchange == record.message.exchange &&
-            TopicMatching.matchesTopicBinding(sub.bindingKey, record.message.routingKey)
-          }.map { sub =>
+        val f = fetchSubscriptions(record.message.exchange, record.message.routingKey).flatMap { allSubscriptions =>
+          val sends = allSubscriptions.map { sub =>
             sendMessage(
               sub.queue,
               record.message.body,

@@ -11,7 +11,6 @@ data "aws_iam_policy_document" "tasks_assume_role_policy_doc" {
 }
 
 data "aws_iam_policy_document" "tasks_role_policy_doc" {
-  
   statement {
     actions = [
       "dynamodb:DescribeStream",
@@ -43,17 +42,7 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
     resources = [
       "${aws_dynamodb_table.dead_letter_queue.arn}",
       "${aws_dynamodb_table.write_ahead_log.arn}",
-    ]
-  }
-
-  statement {
-    actions = [
-      "s3:*",
-    ]
-
-    resources = [
-      "${aws_s3_bucket.subscription.arn}/*",
-      "${aws_s3_bucket.subscription.arn}",
+      "${aws_dynamodb_table.subscriptions.arn}",
     ]
   }
 

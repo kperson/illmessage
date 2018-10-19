@@ -9,9 +9,9 @@ class AppConfig(config: Config = ConfigFactory.load().getConfig("app")) {
 
   def walTable: String = config.getString("aws.wal-table")
 
-  def deadLetterTable: String = config.getString("aws.dead-letter-table")
+  def subscriptionTable: String = config.getString("aws.subscription-table")
 
-  def awsBucket: String = config.getString("aws.bucket")
+  def deadLetterTable: String = config.getString("aws.dead-letter-table")
 
   def port: Int = config.getString("port").toInt
 
