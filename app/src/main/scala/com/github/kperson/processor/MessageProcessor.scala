@@ -16,6 +16,7 @@ import scala.concurrent.duration._
 trait MessageProcessorDependencies {
 
   def removeWALRecord(record: WALRecord): Future[Any]
+
   def sendMessage(
    queueName: String,
    messageBody: String,
@@ -24,7 +25,6 @@ trait MessageProcessorDependencies {
    messageGroupId: Option[String] = None,
    messageAccountId: Option[String] = None
  ): Future[Any]
-
 
   def saveDeadLetter(record: WALRecord, subscription: MessageSubscription, reason: String): Future[Any]
 
@@ -58,7 +58,11 @@ trait MessageProcessor extends StreamChangeCaptureHandler with MessageProcessorD
   }
 
   def sendMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[Any] = {
-    val sends = subscriptions.map { sub =>
+    val subscriptionsPerQueue = subscriptions
+      .groupBy { sub => (sub.accountId, sub.queue) }
+      .map { case (_, l) => l.head }
+      .toList
+    val sends = subscriptionsPerQueue.map { sub =>
       sendMessage(
         sub.queue,
         record.message.body,
@@ -69,6 +73,7 @@ trait MessageProcessor extends StreamChangeCaptureHandler with MessageProcessorD
         if (sub.queue.endsWith(".fifo")) Some(sub.id) else None,
         Some(sub.accountId)
       ).recoverWith { case ex: Throwable =>
+        logger.warn(s"dead letter occurred for subscription id = ${sub.id}, message id = ${record.messageId}")
         saveDeadLetter(record, sub, ex.getMessage)
       }
     }

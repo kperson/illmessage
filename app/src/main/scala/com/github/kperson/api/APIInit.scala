@@ -5,6 +5,7 @@ import akka.stream.ActorMaterializer
 
 import com.github.kperson.app.AppConfig
 import com.github.kperson.aws.dynamo.DynamoClient
+import com.github.kperson.deadletter.DeadLetterQueue
 import com.github.kperson.subscription.{AmazonSubscriptionDAO, SubscriptionDAO}
 import com.github.kperson.wal.WAL
 
@@ -22,7 +23,7 @@ trait APIInit {
   val dynamoClient: DynamoClient = new DynamoClient(config.awsRegion)
   val wal = new WAL(dynamoClient, config.walTable)
   val subscriptionDAO: SubscriptionDAO = new AmazonSubscriptionDAO(dynamoClient, config.subscriptionTable)
-
+  val deadLetterQueue = new DeadLetterQueue(dynamoClient, config.deadLetterTable, wal)
 
   val api = new API(wal, subscriptionDAO)
 

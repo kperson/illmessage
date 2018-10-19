@@ -14,7 +14,6 @@ import scala.concurrent.duration._
 class MessageProcessorImpl extends MessageProcessor with APIInit {
 
   val sqsClient = new SQSClient(config.awsRegion, "NA")
-  val deadLetterQueue = new DeadLetterQueue(dynamoClient, config.deadLetterTable, wal)
 
   def removeWALRecord(record: WALRecord): Future[Any] = {
     wal.remove(record.messageId, record.message.partitionKey)

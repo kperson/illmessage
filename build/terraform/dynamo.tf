@@ -4,8 +4,8 @@ variable "max_capacity" {
 
 resource "aws_dynamodb_table" "dead_letter_queue" {
   name           = "${var.namespace}_dead_letter_queue"
-  read_capacity  = 5
-  write_capacity = 5
+  read_capacity  = 3
+  write_capacity = 3
   hash_key       = "subscriptionId"
   range_key      = "messageId"
 
@@ -33,8 +33,8 @@ resource "aws_dynamodb_table" "dead_letter_queue" {
 
 resource "aws_dynamodb_table" "write_ahead_log" {
   name           = "${var.namespace}_write_ahead_log"
-  read_capacity  = 5
-  write_capacity = 5
+  read_capacity  = 3
+  write_capacity = 3
   hash_key       = "partitionKey"
   range_key      = "messageId"
 
@@ -59,8 +59,8 @@ resource "aws_dynamodb_table" "write_ahead_log" {
 
 resource "aws_dynamodb_table" "subscriptions" {
   name           = "${var.namespace}_subscriptions"
-  read_capacity  = 5
-  write_capacity = 5
+  read_capacity  = 3
+  write_capacity = 3
   hash_key       = "exchange"
   range_key      = "subscriptionId"
 
