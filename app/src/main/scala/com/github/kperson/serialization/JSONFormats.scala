@@ -9,6 +9,7 @@ object JSONFormats {
     new DeadLetterMessageSerializer() ::
     new WALRecordSerializer() ::
     new MethodSerializer() ::
+    new MessageSubscriptionSerializer() ::
     Nil
   )
 

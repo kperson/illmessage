@@ -18,7 +18,7 @@ trait APIInit {
   implicit val actorMaterializer: ActorMaterializer = ActorMaterializer()
   implicit val ec: ExecutionContext = actorMaterializer.executionContext
 
-  val dynamoClient = new DynamoClient(config.awsRegion)
+  val dynamoClient: DynamoClient = new DynamoClient(config.awsRegion)
   val wal = new WAL(dynamoClient, config.walTable)
   val s3Client = new S3Client(config.awsRegion)
   val subscriptionDAO = new AmazonSubscriptionDAO(config.awsBucket, s3Client)

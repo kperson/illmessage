@@ -38,7 +38,7 @@ class AmazonSubscriptionDAO(bucket: String, s3Client: S3Client)(implicit ec: Exe
         (old - subscriptionId, (old - subscriptionId, old.get(subscriptionId))) }
     }
     s3Client.put(bucket, fileKey, write(newSubscriptions).getBytes(StandardCharsets.UTF_8), contentType = "application/json")
-    .map { _ => removed }
+      .map { _ => removed }
   }
 
   def save(subscription: MessageSubscription): Future[MessageSubscription] = {

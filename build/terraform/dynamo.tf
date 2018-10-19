@@ -57,6 +57,32 @@ resource "aws_dynamodb_table" "write_ahead_log" {
   stream_view_type = "NEW_AND_OLD_IMAGES"
 }
 
+
+resource "aws_dynamodb_table" "subscriptions" {
+  name           = "${var.namespace}_subscriptions"
+  read_capacity  = 5
+  write_capacity = 5
+  hash_key       = "exchange"
+  range_key      = "subscriptionId"
+
+  attribute {
+    name = "exchange"
+    type = "S"
+  }
+
+  attribute {
+    name = "subscriptionId"
+    type = "S"
+  }
+
+  server_side_encryption {
+    enabled = true
+  }
+
+  stream_enabled = false
+
+}
+
 module "scale_write_ahead_log" {
   source     = "../modules/dynamo-scale"
   namespace  = "${var.namespace}"
@@ -69,4 +95,11 @@ module "scale_dead_letter_queue" {
   namespace  = "${var.namespace}"
   table_name = "${aws_dynamodb_table.dead_letter_queue.id}"
   table_arn  = "${aws_dynamodb_table.dead_letter_queue.arn}"
+}
+
+module "scale_dead_letter_subscriptions" {
+  source     = "../modules/dynamo-scale"
+  namespace  = "${var.namespace}"
+  table_name = "${aws_dynamodb_table.subscriptions.id}"
+  table_arn  = "${aws_dynamodb_table.subscriptions.arn}"
 }

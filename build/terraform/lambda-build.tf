@@ -29,7 +29,6 @@ resource "aws_lambda_function" "api" {
       AWS_BUCKET        = "${aws_s3_bucket.subscription.id}"
       REGION            = "${var.region}"
       LOG_LEVEL         = "INFO"
-
     }
   }
 }
@@ -41,7 +40,7 @@ resource "aws_lambda_function" "processor" {
   handler          = "com.github.kperson.processor.MessageProcessorImpl"
   runtime          = "java8"
   memory_size      = 512
-  timeout          = 20
+  timeout          = 360
   publish          = true
   source_code_hash = "${base64sha256(file(module.extract_jar.output_file))}"
 
@@ -51,6 +50,7 @@ resource "aws_lambda_function" "processor" {
       WAL_TABLE         = "${aws_dynamodb_table.write_ahead_log.id}"
       AWS_BUCKET        = "${aws_s3_bucket.subscription.id}"
       REGION            = "${var.region}"
+      LOG_LEVEL         = "INFO"
     }
   }
 }

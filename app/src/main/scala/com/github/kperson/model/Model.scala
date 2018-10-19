@@ -36,4 +36,6 @@ case class MessageSubscription(
       .foldLeft(""){_ + _}
   }
 
+  def bindingKeyComponents: List[String] = bindingKey.split("\\.").toList
+
 }
