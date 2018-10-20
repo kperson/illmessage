@@ -16,7 +16,7 @@ case class MessagePayload(
   exchange: String,
   delayInSeconds: Option[Int] = None,
   groupId: Option[String] = None
-) {
+ ) {
 
   def toMessage = Message(
     routingKey,

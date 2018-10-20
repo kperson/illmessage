@@ -1,5 +1,6 @@
-package com.github.kperson.processor
+package com.github.kperson.message
 
+import com.github.kperson.app.AppInit
 import com.github.kperson.aws.dynamo._
 import com.github.kperson.deadletter.{DeadLetterMessage, DeadLetterQueueDAO}
 import com.github.kperson.model.MessageSubscription
@@ -7,7 +8,6 @@ import com.github.kperson.queue.QueueDAO
 import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.subscription.SubscriptionDAO
 import com.github.kperson.wal.{WALRecord, WriteAheadDAO}
-
 import org.json4s.jackson.Serialization._
 import org.json4s.Formats
 import org.slf4j.{Logger, LoggerFactory}
@@ -80,3 +80,6 @@ trait MessageProcessor extends StreamChangeCaptureHandler {
   }
 
 }
+
+//concrete implementation
+class MessageProcessorImpl extends MessageProcessor with AppInit

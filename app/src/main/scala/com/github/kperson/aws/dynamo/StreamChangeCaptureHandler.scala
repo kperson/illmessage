@@ -23,7 +23,6 @@ trait StreamChangeCaptureHandler extends RequestStreamHandler {
           handleChange(i)
         }
       case _ =>
-        println("unable to read input")
     }
     output.flush()
     output.close()

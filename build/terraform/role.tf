@@ -56,6 +56,17 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "*",
     ]
   }
+
+
+  statement {
+    actions = [
+      "lambda:InvokeFunction",
+    ]
+
+    resources = [
+      "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.namespace}_*",
+    ]
+  }
 }
 
 resource "aws_iam_policy" "tasks_policy" {

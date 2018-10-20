@@ -13,7 +13,8 @@ class AppConfig(config: Config = ConfigFactory.load().getConfig("app")) {
 
   def deadLetterTable: String = config.getString("aws.dead-letter-table")
 
-  def port: Int = config.getString("port").toInt
+  def deadLetterLambda: String = config.getString("aws.dead-letter-lambda")
 
+  def port: Int = config.getString("port").toInt
 
 }

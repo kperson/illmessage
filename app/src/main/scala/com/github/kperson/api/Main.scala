@@ -1,6 +1,7 @@
-package com.github.kperson.app
+package com.github.kperson.api
 
-import com.github.kperson.api.API
+import com.github.kperson.app.AppInit
+
 
 object Main extends App with AppInit {
 
