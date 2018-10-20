@@ -10,6 +10,8 @@ trait DeadLetterProcessor extends RequestStreamHandler {
 
   def handleRequest(input: InputStream, output: OutputStream, context: Context) {
     println(Source.fromInputStream(input).mkString)
+    output.write("HELLO WORLD".getBytes)
+    output.close()
   }
 
 }

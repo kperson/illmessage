@@ -2,8 +2,8 @@ package com.github.kperson.app
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-
 import com.github.kperson.aws.dynamo.DynamoClient
+import com.github.kperson.aws.lambda.LambdaClient
 import com.github.kperson.aws.sqs.SQSClient
 import com.github.kperson.deadletter.{AmazonDeadLetterQueueDAO, DeadLetterQueueDAO}
 import com.github.kperson.queue.{AmazonQueueDAO, QueueDAO}
@@ -23,6 +23,7 @@ trait AppInit {
 
   val dynamoClient = new DynamoClient(config.awsRegion)
   val sqsClient = new SQSClient(config.awsRegion, "NA")
+  val lambdaClient = new LambdaClient(config.awsRegion)
 
   val walDAO: WriteAheadDAO = new AmazonWriteAheadDAO(dynamoClient, config.walTable)
   val subscriptionDAO: SubscriptionDAO = new AmazonSubscriptionDAO(dynamoClient, config.subscriptionTable)
