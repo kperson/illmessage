@@ -1,9 +1,12 @@
 package com.github.kperson.processor
 
 import com.github.kperson.aws.dynamo._
+import com.github.kperson.deadletter.{DeadLetterMessage, DeadLetterQueueDAO}
 import com.github.kperson.model.MessageSubscription
+import com.github.kperson.queue.QueueDAO
 import com.github.kperson.serialization.JSONFormats
-import com.github.kperson.wal.WALRecord
+import com.github.kperson.subscription.SubscriptionDAO
+import com.github.kperson.wal.{WALRecord, WriteAheadDAO}
 
 import org.json4s.jackson.Serialization._
 import org.json4s.Formats
@@ -13,30 +16,15 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 
 
-trait MessageProcessorDependencies {
-
-  def removeWALRecord(record: WALRecord): Future[Any]
-
-  def sendMessage(
-   queueName: String,
-   messageBody: String,
-   delay: Option[FiniteDuration] = None,
-   messageDeduplicationId: Option[String] = None,
-   messageGroupId: Option[String] = None,
-   messageAccountId: Option[String] = None
- ): Future[Any]
-
-  def saveDeadLetter(record: WALRecord, subscription: MessageSubscription, reason: String): Future[Any]
-
-  def fetchSubscriptions(exchange: String, routingKey: String): Future[List[MessageSubscription]]
-
-}
-
-
-trait MessageProcessor extends StreamChangeCaptureHandler with MessageProcessorDependencies {
+trait MessageProcessor extends StreamChangeCaptureHandler {
 
   implicit val formats: Formats = JSONFormats.formats
   implicit val ec: ExecutionContext
+
+  def subscriptionDAO: SubscriptionDAO
+  def walDAO: WriteAheadDAO
+  def queueDAO: QueueDAO
+  def deadLetterQueueDAO: DeadLetterQueueDAO
 
   val logger: Logger = LoggerFactory.getLogger(getClass)
 
@@ -47,11 +35,11 @@ trait MessageProcessor extends StreamChangeCaptureHandler with MessageProcessorD
         val record = read[WALRecord](write(item))
         logger.info(s"received new record, $record")
         val f = for {
-          _ <- removeWALRecord(record)
+          _ <-  walDAO.remove(record.messageId, record.message.partitionKey)
           allSubscriptions <- {
             record.preComputedSubscription
               .map { x => Future.successful(List(x)) }
-              .getOrElse(fetchSubscriptions(record.message.exchange, record.message.routingKey))
+              .getOrElse(subscriptionDAO.fetchSubscriptions(record.message.exchange, record.message.routingKey))
           }
           rs <- sendMessages(allSubscriptions, record)
         } yield rs
@@ -66,19 +54,26 @@ trait MessageProcessor extends StreamChangeCaptureHandler with MessageProcessorD
       .groupBy { sub => (sub.accountId, sub.queue) }
       .map { case (_, l) => l.head }
       .toList
-    val sends = subscriptionsPerQueue.map { sub =>
-      sendMessage(
+    val sends: List[Future[Any]] = subscriptionsPerQueue.map { sub =>
+      queueDAO.sendMessage(
         sub.queue,
         record.message.body,
-        record.message.delayInSeconds.map {
-          _.seconds
-        },
-        if (sub.queue.endsWith(".fifo")) Some(record.messageId) else None,
-        if (sub.queue.endsWith(".fifo")) Some(sub.id) else None,
-        Some(sub.accountId)
+        sub.id,
+        record.messageId,
+        sub.accountId,
+        record.message.delayInSeconds.map { _.seconds }
       ).recoverWith { case ex: Throwable =>
         logger.warn(s"dead letter occurred for subscription id = ${sub.id}, message id = ${record.messageId}")
-        saveDeadLetter(record, sub, ex.getMessage)
+        deadLetterQueueDAO.write(
+          DeadLetterMessage(
+            sub,
+            record.messageId,
+            record.message,
+            System.currentTimeMillis(),
+            System.currentTimeMillis() / 1000L + 14.days.toSeconds,
+            ex.getMessage
+          )
+        )
       }
     }
     if (sends.nonEmpty) Future.sequence(sends) else Future.successful(true)

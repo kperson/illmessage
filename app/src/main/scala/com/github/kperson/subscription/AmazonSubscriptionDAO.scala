@@ -13,10 +13,10 @@ class AmazonSubscriptionDAO(client: DynamoClient, table: String)(implicit ec: Ex
   implicit val defaultFormats: Formats = JSONFormats.formats
 
   def fetchSubscriptions(exchange: String, routingKey: String): Future[List[MessageSubscription]] = {
-    fetch(exchange, routingKey)
+    fetchSubscriptionsHelper(exchange, routingKey)
   }
 
-  private def fetch(
+  private def fetchSubscriptionsHelper(
     exchange: String,
     routingKey: String,
     lastEvaluatedKey: Option[Map[String, Any]] = None,
@@ -43,7 +43,7 @@ class AmazonSubscriptionDAO(client: DynamoClient, table: String)(implicit ec: Ex
     )
     query.flatMap { rs =>
       rs.lastEvaluatedKey match {
-        case Some(k) => fetch(exchange, routingKey, Some(k), base ++ rs.results)
+        case Some(k) => fetchSubscriptionsHelper(exchange, routingKey, Some(k), base ++ rs.results)
         case _ => Future.successful(base ++ rs.results)
       }
     }

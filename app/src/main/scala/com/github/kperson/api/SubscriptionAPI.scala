@@ -10,7 +10,7 @@ import com.github.kperson.subscription.SubscriptionDAO
 
 trait SubscriptionAPI extends MarshallingSupport {
 
-  val subscriptionDAO: SubscriptionDAO
+  def subscriptionDAO: SubscriptionDAO
 
   val subscriptionRoute: server.Route = {
     pathPrefix("subscription") {

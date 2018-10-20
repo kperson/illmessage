@@ -94,7 +94,6 @@ class SQSClient(
       .recover {
         case  AWSError(resp) =>
           val xml = XML.loadString(new String(resp.body))
-          println(xml)
           val failures = (xml \\ "Error").map { e =>
             val code = (e \ "Code").text
             val message = (e \ "Message").text

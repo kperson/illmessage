@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 
 import com.github.kperson.model.Message
-import com.github.kperson.wal.WAL
+import com.github.kperson.wal.WriteAheadDAO
 
 import java.util.UUID
 
@@ -31,14 +31,15 @@ case class MessagePayload(
 
 trait MessageAPI extends MarshallingSupport {
 
-  val wal: WAL
+  def writeAheadDAO: WriteAheadDAO
+
   val messageRoute: server.Route = {
     path("messages") {
       post {
         decodeRequest {
           entity(as[List[MessagePayload]]) { messagePayloads =>
             val messages = messagePayloads.map { _.toMessage }
-            onSuccess(wal.write(messages)) { _ =>
+            onSuccess(writeAheadDAO.write(messages)) { _ =>
               complete((StatusCodes.OK, messages))
             }
           }

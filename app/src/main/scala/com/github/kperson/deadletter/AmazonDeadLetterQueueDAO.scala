@@ -3,26 +3,15 @@ package com.github.kperson.deadletter
 import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.model.{Message, MessageSubscription}
 import com.github.kperson.serialization.JSONFormats
-import com.github.kperson.wal.WAL
+import com.github.kperson.wal.WriteAheadDAO
 
 import org.json4s.Formats
 
 import scala.concurrent.Future
 
 
-case class DeadLetterMessage(
-  subscription: MessageSubscription,
-  messageId: String,
-  message: Message,
-  insertedAt: Long,
-  ttl: Long,
-  reason: String
 
-) {
-  def subscriptionId: String = subscription.id
-}
-
-class DeadLetterQueue(client: DynamoClient, table: String, wal: WAL) {
+class AmazonDeadLetterQueueDAO(client: DynamoClient, table: String, walDAO: WriteAheadDAO) extends DeadLetterQueueDAO {
 
   implicit val defaultFormats: Formats = JSONFormats.formats
 
@@ -32,7 +21,12 @@ class DeadLetterQueue(client: DynamoClient, table: String, wal: WAL) {
     client.putItem(table, message)
   }
 
-  def loadToWAL(
+
+  def loadToWAL(subscription: MessageSubscription): Future[List[(String, Message)]] = {
+    loadToWALHelper(subscription)
+  }
+
+  private def loadToWALHelper(
     subscription: MessageSubscription,
     base: List[(String, Message)] = List.empty,
     lastEvaluatedKey: Option[Map[String, Any]] = None,
@@ -55,7 +49,7 @@ class DeadLetterQueue(client: DynamoClient, table: String, wal: WAL) {
       val transfers = messageSubscriptionsGroups.toList.map { group =>
         val walInsert = group.map { case (m, s, _) => (m, Some(s)) }
         //move the records to wal
-        wal.writeWithSubscription(walInsert)
+        walDAO.writeWithSubscription(walInsert)
         .map { rs =>
           //delete the records from the dead letter queue
           deleteKeys(group.map { case (_, s, mId) => Map("subscriptionId" -> s.id, "messageId" -> mId) })
@@ -68,7 +62,7 @@ class DeadLetterQueue(client: DynamoClient, table: String, wal: WAL) {
     }.flatMap { case (records, lek) =>
       val newBase = base ++ records
       lek match {
-        case key @ Some(_) => loadToWAL(subscription, newBase, key, Some(t))
+        case key @ Some(_) => loadToWALHelper(subscription, newBase, key, Some(t))
         case _ => Future.successful(newBase)
       }
     }

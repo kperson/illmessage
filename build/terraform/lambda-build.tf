@@ -15,7 +15,7 @@ resource "aws_lambda_function" "api" {
   filename         = "${module.extract_jar.output_file}"
   function_name    = "${var.namespace}_api"
   role             = "${aws_iam_role.tasks_role.arn}"
-  handler          = "com.github.kperson.api.LambdaAPIInit"
+  handler          = "com.github.kperson.api.LambdaAPI"
   runtime          = "java8"
   memory_size      = 512
   timeout          = 20

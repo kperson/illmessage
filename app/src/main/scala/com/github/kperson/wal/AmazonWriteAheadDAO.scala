@@ -17,7 +17,7 @@ case class WALRecord(
   preComputedSubscription: Option[MessageSubscription] = None
 )
 
-class WAL(client: DynamoClient, walTable: String) {
+class AmazonWriteAheadDAO(client: DynamoClient, walTable: String) extends WriteAheadDAO {
 
   implicit val defaultFormats: Formats = JSONFormats.formats
 
