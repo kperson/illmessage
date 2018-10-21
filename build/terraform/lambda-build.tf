@@ -22,6 +22,7 @@ resource "aws_lambda_function" "api" {
       WAL_TABLE          = "${aws_dynamodb_table.write_ahead_log.id}"
       SUBSCRIPTION_TABLE = "${aws_dynamodb_table.subscriptions.id}"
       REGION             = "${var.region}"
+      BACKGROUND_TASK_ARN = "${aws_ecs_task_definition.background.arn}"
       LOG_LEVEL          = "INFO"
     }
   }
@@ -44,6 +45,7 @@ resource "aws_lambda_function" "processor" {
       WAL_TABLE          = "${aws_dynamodb_table.write_ahead_log.id}"
       SUBSCRIPTION_TABLE = "${aws_dynamodb_table.subscriptions.id}"
       REGION             = "${var.region}"
+      BACKGROUND_TASK_ARN = "${aws_ecs_task_definition.background.arn}"
       LOG_LEVEL          = "INFO"
     }
   }
