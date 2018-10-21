@@ -41,8 +41,17 @@ resource "null_resource" "docker_build" {
   }
 }
 
+data "template_file" "docker_tag" {
+  depends_on = ["null_resource.docker_build"]
+  template   = "$${output_file}"
+
+  vars {
+    output_file = "${random_string.tag.result}"
+  }
+}
+
 output "docker_tag" {
-  value = "${random_string.tag.result}"
+  value = "${data.template_file.docker_tag.rendered}"
 }
 
 output "repo_url" {

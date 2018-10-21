@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "repo" {
-  name = "${var.namespace}_background"
+  name = "${var.namespace}_background_processor"
 }
 
 resource "aws_ecr_lifecycle_policy" "repo" {
