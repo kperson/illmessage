@@ -6,7 +6,7 @@ resource "aws_cloudwatch_log_group" "log" {
   name = "${var.namespace}"
 }
 
-data "template_file" "api_container_definitions" {
+data "template_file" "background_container_definitions" {
   template = "${file("files/container-definition.tpl")}"
 
   vars {
@@ -14,8 +14,6 @@ data "template_file" "api_container_definitions" {
     dead_letter_table  = "${jsonencode(aws_dynamodb_table.dead_letter_queue.id)}"
     wal_table          = "${jsonencode(aws_dynamodb_table.write_ahead_log.id)}"
     subscription_table = "${jsonencode(aws_dynamodb_table.subscriptions.id)}"
-    cpu                = "512"
-    memory             = "1024"
     region             = "${jsonencode(var.region)}"
     log_group          = "${jsonencode(var.namespace)}"
     docker_image       = "${jsonencode(aws_ecr_repository.repo.repository_url)}"
@@ -26,10 +24,12 @@ resource "aws_ecs_task_definition" "background" {
   depends_on               = ["aws_iam_role_policy_attachment.tasks_base_policy", "aws_iam_policy.tasks_policy"]
   family                   = "${var.namespace}_background"
   network_mode             = "awsvpc"
-  requires_compatibilities = ["EC2", "FARGATE"]
+  requires_compatibilities = ["FARGATE"]
   task_role_arn            = "${aws_iam_role.tasks_role.arn}"
   execution_role_arn       = "${aws_iam_role.execution.arn}"
-  container_definitions    = "${data.template_file.api_container_definitions.rendered}"
+  container_definitions    = "${data.template_file.background_container_definitions.rendered}"
+  cpu                      = 512
+  memory                   = 1024
 }
 
 data "aws_iam_policy_document" "execution_role_policy" {

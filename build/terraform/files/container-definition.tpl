@@ -18,11 +18,8 @@
 				"value": ${region}
 			}
 		],
-		"cpu": ${cpu},
 		"essential": true,
 		"image": ${docker_image},
-		"memory": ${memory},
-		"memoryReservation": ${memory},
 		"name": "illmessage-background",
 		"logConfiguration": {
 			"logDriver": "awslogs",
