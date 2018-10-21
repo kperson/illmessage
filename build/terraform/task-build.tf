@@ -80,16 +80,16 @@ data "aws_iam_policy_document" "execution_assume_role_policy" {
 }
 
 resource "aws_iam_policy" "execution" {
-  name   = "execution_policy"
+  name   = "${var.namespace}_execution_policy"
   policy = "${data.aws_iam_policy_document.execution_role_policy.json}"
 }
 
 resource "aws_iam_role" "execution" {
-  name               = "execution"
+  name               = "${var.namespace}_execution"
   assume_role_policy = "${data.aws_iam_policy_document.execution_assume_role_policy.json}"
 }
 
 resource "aws_iam_role_policy_attachment" "execution_policy" {
-  role       = "${aws_iam_role.rexecution.name}"
+  role       = "${aws_iam_role.execution.name}"
   policy_arn = "${aws_iam_policy.execution.arn}"
 }
