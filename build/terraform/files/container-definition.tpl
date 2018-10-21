@@ -15,7 +15,7 @@
 			},
 			{
 				"name": "REGION",
-				"value": ${aws_region}
+				"value": ${region}
 			}
 		],
 		"cpu": ${cpu},

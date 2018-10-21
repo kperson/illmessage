@@ -7,12 +7,12 @@ data "template_file" "api_container_definitions" {
 
   vars {
     api_image          = "${jsonencode(aws_ecr_repository.repo.repository_url)}"
-    aws_region         = "${jsonencode(var.region)}"
     dead_letter_table  = "${jsonencode(aws_dynamodb_table.dead_letter_queue.id)}"
     wal_table          = "${jsonencode(aws_dynamodb_table.write_ahead_log.id)}"
     subscription_table = "${jsonencode(aws_dynamodb_table.subscriptions.id)}"
     cpu                = "512"
     memory             = "1024"
+    region             = "${jsonencode(var.region)}"
     log_group          = "${jsonencode(var.namespace)}"
     docker_image       = "${jsonencode(aws_ecr_repository.repo.repository_url)}"
   }

@@ -98,8 +98,20 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
   }
 
-   
-  
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "logs:*",
+    ]
+
+    resources = [
+      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.namespace}:*",
+      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.namespace}",
+    ]
+  }
+
 
 
   # Code build
@@ -174,9 +186,20 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     actions = [
       "ecr:GetAuthorizationToken",
       "ecr:DescribeRepositories",
+      "ecr:CreateRepository",
     ]
 
     resources = ["*"]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "ecr:*",
+    ]
+    
+    resources = ["arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/${var.namespace}_*"]
   }
 
 }
