@@ -24,8 +24,11 @@ case class MessageSubscription(
   exchange: String,
   bindingKey: String,
   queue: String,
-  accountId: String
+  accountId: String,
+  status: String = "active"
 ) {
+
+  require(List("active", "transitioning", "inactive").contains(status), "status must be active, transitioning, inactive")
 
   def id: String = {
     val text = s"exchange:$exchange:bindingKey:$bindingKey:queue:$queue:accountId:$accountId"

@@ -1,6 +1,5 @@
 [
 	{
-		"cpu": ${cpu},
 		"environment": [
 			{
 				"name": "WAL_TABLE",
@@ -11,30 +10,26 @@
 				"value": ${dead_letter_table}
 			},
 			{
-				"name": "AWS_REION",
-				"value": ${aws_region}
+				"name": "SUBSCRIPTION_TABLE",
+				"value": ${subscription_table}
 			},
 			{
-				"name": "PORT",
-				"value": "8000"
+				"name": "REGION",
+				"value": ${aws_region}
 			}
 		],
-		"portMappings": [
-			{
-				"containerPort": 8000
-			}
-		],
+		"cpu": ${cpu},
 		"essential": true,
 		"image": ${docker_image},
 		"memory": ${memory},
 		"memoryReservation": ${memory},
-		"name": "illmessage-api",
+		"name": "illmessage-background",
 		"logConfiguration": {
 			"logDriver": "awslogs",
 			"options": {
 				"awslogs-group": ${log_group},
-				"awslogs-region": ${aws_region},
-				"awslogs-stream-prefix": "illmessage-api"
+				"awslogs-region": ${region},
+				"awslogs-stream-prefix": "illmessage-background"
 			}
 		}
 	}

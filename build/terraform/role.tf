@@ -8,6 +8,15 @@ data "aws_iam_policy_document" "tasks_assume_role_policy_doc" {
       identifiers = ["lambda.amazonaws.com"]
     }
   }
+
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
 }
 
 data "aws_iam_policy_document" "tasks_role_policy_doc" {
@@ -56,7 +65,6 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "*",
     ]
   }
-
 
   statement {
     actions = [

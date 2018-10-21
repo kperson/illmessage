@@ -13,7 +13,8 @@ class MessageSubscriptionSerializer extends CustomSerializer[MessageSubscription
       val bindingKey = (json \ "bindingKey").extract[String]
       val queue = (json \ "queue").extract[String]
       val accountId = (json \ "accountId").extract[String]
-      MessageSubscription(exchange, bindingKey, queue, accountId)
+      val status = (json \ "status").extract[String]
+      MessageSubscription(exchange, bindingKey, queue, accountId, status)
   },
   {
     case subscription: MessageSubscription =>
@@ -23,6 +24,7 @@ class MessageSubscriptionSerializer extends CustomSerializer[MessageSubscription
         JField("queue", JString(subscription.queue)) ::
         JField("accountId", JString(subscription.accountId)) ::
         JField("subscriptionId", JString(subscription.id)) ::
+        JField("status", JString(subscription.status)) ::
         JField("bindingKeyComponents", JArray(subscription.bindingKeyComponents.map { JString(_) })) ::
         JField("bindingKeyComponentsSize", JInt(subscription.bindingKeyComponents.length.toLong)) ::
         Nil

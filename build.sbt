@@ -38,3 +38,17 @@ lazy val app = (project in file("app")).
     "org.scalamock"           %% "scalamock-scalatest-support" % scalaMockSupportVersion  % "test",
     "com.typesafe.akka"       %% "akka-stream-testkit"         % "2.5.16"                 % "test"
   ))
+
+
+  lazy val background = (project in file("background")).
+  settings(commonSettings: _*).
+  settings(
+   fork in run := true,
+    assemblyMergeStrategy in assembly := {
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case PathList("reference.conf") => MergeStrategy.concat
+      case _ => MergeStrategy.first
+    }
+  ).settings(libraryDependencies ++= Seq (
+    "ch.qos.logback"          %  "logback-classic"             % "1.2.3" % "runtime"
+  )).dependsOn(app)

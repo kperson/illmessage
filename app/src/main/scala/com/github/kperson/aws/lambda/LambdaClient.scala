@@ -7,7 +7,7 @@ import com.github.kperson.aws.{Credentials, HttpRequest}
 import org.json4s.Formats
 import org.json4s.jackson.Serialization.write
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration._
 
@@ -29,7 +29,10 @@ object DryRun extends InvocationType {
 
 }
 
-class LambdaClient(region: String, credentialsProvider: AWSCredentialsProvider = Credentials.defaultCredentialsProvider) {
+class LambdaClient(
+  region: String,
+  credentialsProvider: AWSCredentialsProvider = Credentials.defaultCredentialsProvider
+)(implicit val ec: ExecutionContext) {
 
   val endpoint = s"https://lambda.${region}.amazonaws.com"
 
@@ -39,7 +42,7 @@ class LambdaClient(region: String, credentialsProvider: AWSCredentialsProvider =
    invocationType: InvocationType = RequestResponse,
    qualifier: Option[String] = None,
    timeout: FiniteDuration = 10.seconds
- )(implicit formats: Formats): Future[Any] = {
+ )(implicit formats: Formats): Future[Array[Byte]] = {
     val payloadBytes = write(payload)(formats).getBytes(StandardCharsets.UTF_8)
     request(
       "POST",
@@ -47,7 +50,7 @@ class LambdaClient(region: String, credentialsProvider: AWSCredentialsProvider =
       headers = Map("X-Amz-Invocation-Type" -> invocationType.toString),
       queryParams = qualifier.map { x => Map("Qualifier" -> x) }.getOrElse(Map.empty),
       payload = payloadBytes
-    ).run(timeout)
+    ).run(timeout).map { _.body }
   }
 
   private def request(
@@ -61,7 +64,8 @@ class LambdaClient(region: String, credentialsProvider: AWSCredentialsProvider =
       credentialsProvider.getCredentials,
       "lambda",
       region,
-      s"https://dynamodb.$region.amazonaws.com",
+      endpoint,
+      path,
       method = method,
       headers = headers,
       payload = payload,

@@ -33,7 +33,6 @@ class HttpRequest(
   private val finalPath = if (path.startsWith("/")) path else "/" + path
   private val finalServiceEndpoint = if (serviceEndpoint.endsWith("/")) serviceEndpoint.substring(0, serviceEndpoint.length - 1) else serviceEndpoint
 
-
   private val builder = new RequestBuilder(finalMethod, true)
   builder.setUrl(s"$serviceEndpoint${AWSSigning.uriEncode(finalPath, isParameter = false)}")
 
