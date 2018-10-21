@@ -19,7 +19,6 @@ data "template_file" "api_container_definitions" {
 }
 
 resource "aws_ecs_task_definition" "background" {
-  depends_on               = ["null_resource.docker_build"]
   family                   = "${var.namespace}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["EC2", "FARGATE"]
