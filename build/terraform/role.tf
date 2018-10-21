@@ -85,16 +85,7 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:task-definition/${var.namespace}_background:*",
     ]
   }
-
-  statement {
-    actions = [
-      "ecs:CreateCluster",
-    ]
-
-    resources = [
-      "*",
-    ]
-  }
+  
 }
 
 resource "aws_iam_policy" "tasks_policy" {

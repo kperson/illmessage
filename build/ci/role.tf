@@ -114,6 +114,18 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
 
 
+  statement {
+    actions = [
+      "ecs:CreateCluster",
+      "ecs:RegisterTaskDefinition"
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+
+
   # Code build
 
   statement {
