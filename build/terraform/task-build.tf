@@ -1,3 +1,7 @@
+resource "aws_ecs_cluster" "illmessage" {
+  name = "${var.namespace}"
+}
+
 resource "aws_cloudwatch_log_group" "log" {
   name = "${var.namespace}"
 }
@@ -19,7 +23,7 @@ data "template_file" "api_container_definitions" {
 }
 
 resource "aws_ecs_task_definition" "background" {
-  family                   = "${var.namespace}"
+  family                   = "${var.namespace}_background"
   network_mode             = "awsvpc"
   requires_compatibilities = ["EC2", "FARGATE"]
   task_role_arn            = "${aws_iam_role.tasks_role.arn}"

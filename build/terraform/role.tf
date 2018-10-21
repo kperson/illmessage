@@ -75,6 +75,26 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.namespace}_*",
     ]
   }
+
+  statement {
+    actions = [
+      "ecs:RunTask",
+    ]
+
+    resources = [
+      "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:task-definition/${var.namespace}_background:*",
+    ]
+  }
+
+  statement {
+    actions = [
+      "ecs:CreateCluster",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
 }
 
 resource "aws_iam_policy" "tasks_policy" {
