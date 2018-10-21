@@ -4,4 +4,5 @@ ADD . /code
 WORKDIR /code
 RUN sbt assembly
 
-ENTRYPOINT ["start.sh"]
+ADD entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
