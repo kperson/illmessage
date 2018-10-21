@@ -30,7 +30,9 @@ resource "aws_dynamodb_table" "dead_letter_queue" {
 
   stream_enabled = false
 
-  ignore_changes = ["read_capacity", "write_capacity"]
+  lifecycle {
+    ignore_changes = ["read_capacity", "write_capacity"]
+  }
 }
 
 resource "aws_dynamodb_table" "write_ahead_log" {
@@ -58,7 +60,9 @@ resource "aws_dynamodb_table" "write_ahead_log" {
 
   stream_view_type = "NEW_AND_OLD_IMAGES"
 
-  ignore_changes = ["read_capacity", "write_capacity"]
+  lifecycle {
+    ignore_changes = ["read_capacity", "write_capacity"]
+  }
 }
 
 resource "aws_dynamodb_table" "subscriptions" {
@@ -84,7 +88,9 @@ resource "aws_dynamodb_table" "subscriptions" {
 
   stream_enabled = false
 
-  ignore_changes = ["read_capacity", "write_capacity"]
+  lifecycle {
+    ignore_changes = ["read_capacity", "write_capacity"]
+  }
 }
 
 module "scale_write_ahead_log" {
