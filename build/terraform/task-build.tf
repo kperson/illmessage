@@ -23,6 +23,7 @@ data "template_file" "api_container_definitions" {
 }
 
 resource "aws_ecs_task_definition" "background" {
+  depends_on               = ["aws_iam_role_policy_attachment.tasks_base_policy", "aws_iam_policy.tasks_policy"]
   family                   = "${var.namespace}_background"
   network_mode             = "awsvpc"
   requires_compatibilities = ["EC2", "FARGATE"]

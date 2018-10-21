@@ -125,6 +125,16 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
   }
 
+  statement {
+    actions = [
+      "ecs:DescribeClusters",
+    ]
+
+    resources = [
+      "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.namespace}",
+    ]
+  }
+
 
   # Code build
 
