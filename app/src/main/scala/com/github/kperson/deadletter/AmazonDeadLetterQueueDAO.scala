@@ -1,17 +1,26 @@
 package com.github.kperson.deadletter
 
+import com.github.kperson.app.TaskVPCConfig
 import com.github.kperson.aws.dynamo.DynamoClient
+import com.github.kperson.aws.ecs.ECSClient
 import com.github.kperson.model.{Message, MessageSubscription}
 import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.wal.WriteAheadDAO
-
 import org.json4s.Formats
 
 import scala.concurrent.Future
 
 
 
-class AmazonDeadLetterQueueDAO(client: DynamoClient, table: String, walDAO: WriteAheadDAO) extends DeadLetterQueueDAO {
+class AmazonDeadLetterQueueDAO(
+  client: DynamoClient,
+  table: String,
+  walDAO: WriteAheadDAO,
+  ecsClient: ECSClient,
+  backgroundTaskDefinitionArn: String,
+  taskVPCConfig: TaskVPCConfig
+
+) extends DeadLetterQueueDAO {
 
   implicit val defaultFormats: Formats = JSONFormats.formats
 
@@ -66,6 +75,26 @@ class AmazonDeadLetterQueueDAO(client: DynamoClient, table: String, walDAO: Writ
         case _ => Future.successful(newBase)
       }
     }
+  }
+
+  def triggerRedeliver(subscription: MessageSubscription): Future[Any] = {
+    val req = Map(
+      "networkConfiguration" -> Map(
+        "awsvpcConfiguration" -> Map(
+          "assignPublicIp" -> "DISABLED",
+          "securityGroups" -> List(taskVPCConfig.securityGroup),
+          "subnets" -> List(taskVPCConfig.subnet)
+        )
+      ),
+      "overrides" -> Map(
+        "containerOverrides" -> List(
+          "command" -> List("redeliver", subscription.exchange, subscription.bindingKey, subscription.queue, subscription.accountId)
+        )
+      ),
+      "taskDefinition" -> backgroundTaskDefinitionArn,
+      "count" -> 1
+    )
+    ecsClient.request(req, "AmazonEC2ContainerServiceV20141113.RunTask").run()
   }
 
   private def deleteKeys(keys: List[Map[String, Any]]): Future[Any] = {

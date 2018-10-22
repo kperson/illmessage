@@ -21,7 +21,7 @@ trait DeadLetterAPI extends MarshallingSupport {
               val subscription = MessageSubscription(exchange, bindingKey, queue, accountId)
               path("redeliver") {
                 post {
-                  onSuccess(deadLetterQueueDAO.loadToWAL(subscription)) { _ =>
+                  onSuccess(deadLetterQueueDAO.triggerRedeliver(subscription)) { _ =>
                     complete(StatusCodes.NoContent)
                   }
                 }

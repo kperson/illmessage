@@ -18,12 +18,14 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      DEAD_LETTER_TABLE  = "${aws_dynamodb_table.dead_letter_queue.id}"
-      WAL_TABLE          = "${aws_dynamodb_table.write_ahead_log.id}"
-      SUBSCRIPTION_TABLE = "${aws_dynamodb_table.subscriptions.id}"
-      REGION             = "${var.region}"
+      DEAD_LETTER_TABLE   = "${aws_dynamodb_table.dead_letter_queue.id}"
+      WAL_TABLE           = "${aws_dynamodb_table.write_ahead_log.id}"
+      SUBSCRIPTION_TABLE  = "${aws_dynamodb_table.subscriptions.id}"
+      REGION              = "${var.region}"
       BACKGROUND_TASK_ARN = "${aws_ecs_task_definition.background.arn}"
-      LOG_LEVEL          = "INFO"
+      LOG_LEVEL           = "INFO"
+      TASK_SUBNET         = "${var.task_subnet}"
+      TASK_SECURITY_GROUP = "${var.task_security_group}"
     }
   }
 }
@@ -41,12 +43,14 @@ resource "aws_lambda_function" "processor" {
 
   environment {
     variables = {
-      DEAD_LETTER_TABLE  = "${aws_dynamodb_table.dead_letter_queue.id}"
-      WAL_TABLE          = "${aws_dynamodb_table.write_ahead_log.id}"
-      SUBSCRIPTION_TABLE = "${aws_dynamodb_table.subscriptions.id}"
-      REGION             = "${var.region}"
+      DEAD_LETTER_TABLE   = "${aws_dynamodb_table.dead_letter_queue.id}"
+      WAL_TABLE           = "${aws_dynamodb_table.write_ahead_log.id}"
+      SUBSCRIPTION_TABLE  = "${aws_dynamodb_table.subscriptions.id}"
+      REGION              = "${var.region}"
       BACKGROUND_TASK_ARN = "${aws_ecs_task_definition.background.arn}"
-      LOG_LEVEL          = "INFO"
+      LOG_LEVEL           = "INFO"
+      TASK_SUBNET         = "${var.task_subnet}"
+      TASK_SECURITY_GROUP = "${var.task_security_group}"
     }
   }
 }

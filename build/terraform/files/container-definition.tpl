@@ -16,6 +16,18 @@
 			{
 				"name": "REGION",
 				"value": ${region}
+			},
+			{
+				"name": "TASK_SUBNET",
+				"value": ${task_subnet}
+			},
+			{
+				"name": "TASK_SECURITY_GROUP",
+				"value": ${task_security_group}
+			},
+			{
+				"name": "BACKGROUND_TASK_ARN",
+				"value": "NA"
 			}
 		],
 		"essential": true,

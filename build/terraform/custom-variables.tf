@@ -10,6 +10,12 @@ variable "profile" {
   default = "default"
 }
 
+variable "vpc_id" {}
+
+variable "task_security_group" {}
+
+variable "task_subnet" {}
+
 provider "aws" {
   region  = "${var.region}"
   profile = "${var.profile}"

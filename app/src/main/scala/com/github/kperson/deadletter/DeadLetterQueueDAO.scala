@@ -21,4 +21,6 @@ trait DeadLetterQueueDAO {
 
   def loadToWAL(subscription: MessageSubscription): Future[List[(String, Message)]]
 
+  def triggerRedeliver(subscription: MessageSubscription): Future[Any]
+
 }

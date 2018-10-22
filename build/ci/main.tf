@@ -32,6 +32,22 @@ resource "aws_codebuild_project" "codebuild" {
       "name"  = "TERRAFORM_ZIP_URL"
       "value" = "https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip"
     }
+
+    environment_variable {
+      "name"  = "VPC_ID"
+      "value" = "${var.build_vpc_id}"
+    }
+
+    environment_variable {
+      "name"  = "TASK_SECURITY_GROUP"
+      "value" = "${var.build_security_group_ids[0]}"
+    }
+
+    environment_variable {
+      "name"  = "TASK_SUBNET"
+      "value" = "${var.build_subnets[0]}"
+    }
+
   }
 
   source {

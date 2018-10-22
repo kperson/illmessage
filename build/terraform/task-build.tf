@@ -10,13 +10,15 @@ data "template_file" "background_container_definitions" {
   template = "${file("files/container-definition.tpl")}"
 
   vars {
-    api_image          = "${jsonencode(aws_ecr_repository.repo.repository_url)}"
-    dead_letter_table  = "${jsonencode(aws_dynamodb_table.dead_letter_queue.id)}"
-    wal_table          = "${jsonencode(aws_dynamodb_table.write_ahead_log.id)}"
-    subscription_table = "${jsonencode(aws_dynamodb_table.subscriptions.id)}"
-    region             = "${jsonencode(var.region)}"
-    log_group          = "${jsonencode(var.namespace)}"
-    docker_image       = "${jsonencode(aws_ecr_repository.repo.repository_url)}"
+    api_image           = "${jsonencode(aws_ecr_repository.repo.repository_url)}"
+    dead_letter_table   = "${jsonencode(aws_dynamodb_table.dead_letter_queue.id)}"
+    wal_table           = "${jsonencode(aws_dynamodb_table.write_ahead_log.id)}"
+    subscription_table  = "${jsonencode(aws_dynamodb_table.subscriptions.id)}"
+    region              = "${jsonencode(var.region)}"
+    log_group           = "${jsonencode(var.namespace)}"
+    docker_image        = "${jsonencode(aws_ecr_repository.repo.repository_url)}"
+    task_subnet         = "${jsonencode(var.task_subnet)}"
+    task_security_group = "${jsonencode(var.task_security_group)}"
   }
 }
 
