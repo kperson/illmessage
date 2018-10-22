@@ -22,9 +22,9 @@ lazy val app = (project in file("app")).
     }
   ).
   settings(libraryDependencies ++= Seq (
-    "com.amazonaws"           % "aws-lambda-java-events"       % "2.2.2",
+    "com.amazonaws"           %  "aws-lambda-java-events"      % "2.2.2",
     "com.amazonaws"           %  "aws-java-sdk-core"           % "1.11.416",
-    "com.amazonaws"           % "aws-lambda-java-core"         % "1.2.0",
+    "com.amazonaws"           %  "aws-lambda-java-core"        % "1.2.0",
     "org.json4s"              %% "json4s-jackson"              % "3.6.1",
     "org.scala-stm"           %% "scala-stm"                   % "0.8",
     "org.asynchttpclient"     %  "async-http-client"           % "2.5.3",
