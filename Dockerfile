@@ -2,7 +2,14 @@ FROM kperson/alpine-java-8
 
 ADD . /code
 WORKDIR /code
-RUN sbt assembly && rm -rf /root/.ivy2 && rm -rf /root/.sbt
+RUN mkdir -p /jars
+
+RUN sbt assembly \
+    && cp /code/app/target/scala-2.12/app-assembly-1.0.0.jar /jars/app-assembly-1.0.0.jar \
+    && cp /code/background/target/scala-2.12/background-assembly-1.0.0.jar /jars/background-assembly-1.0.0.jar \
+    && sbt clean cleanFiles \
+    && rm -rf /root/.ivy2 \
+    && rm -rf /root/.sbt
 
 ADD entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
