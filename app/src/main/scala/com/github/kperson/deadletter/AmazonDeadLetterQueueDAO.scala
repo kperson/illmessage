@@ -88,9 +88,13 @@ class AmazonDeadLetterQueueDAO(
       ),
       "overrides" -> Map(
         "containerOverrides" -> List(
-          "command" -> List("redeliver", subscription.exchange, subscription.bindingKey, subscription.queue, subscription.accountId)
+          Map(
+            "command" -> List("background", "redeliver", subscription.exchange, subscription.bindingKey, subscription.queue, subscription.accountId),
+            "name" -> "illmessage-background"
+          )
         )
       ),
+      "launchType" -> "FARGATE",
       "taskDefinition" -> backgroundTaskDefinitionArn,
       "count" -> 1
     )
