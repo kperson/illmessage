@@ -85,6 +85,18 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:task-definition/${var.namespace}_background:*",
     ]
   }
+
+  statement {
+    actions = [
+      "iam:PassRole",
+    ]
+
+    resources = [
+      "${aws_iam_role.execution.arn}",
+    ]
+  }
+
+  
 }
 
 resource "aws_iam_policy" "tasks_policy" {

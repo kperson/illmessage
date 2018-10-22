@@ -28,6 +28,10 @@
 			{
 				"name": "BACKGROUND_TASK_ARN",
 				"value": "NA"
+			},
+			{
+				"name": "LOG_LEVEL",
+				"value": "INFO"
 			}
 		],
 		"essential": true,
