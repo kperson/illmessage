@@ -11,6 +11,7 @@ import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.wal.WriteAheadDAO
 
 import org.json4s.Formats
+import org.slf4j.LoggerFactory
 
 
 class API(
@@ -22,6 +23,7 @@ extends MessageAPI
 with SubscriptionAPI
 with DeadLetterAPI {
 
+  val logger = LoggerFactory.getLogger(getClass)
   val jsonFormats: Formats = JSONFormats.formats
   val route: server.Route = messageRoute ~ subscriptionRoute ~ deadLetterRoute
 
