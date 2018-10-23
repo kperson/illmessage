@@ -13,8 +13,12 @@ class MessageSubscriptionSerializer extends CustomSerializer[MessageSubscription
       val bindingKey = (json \ "bindingKey").extract[String]
       val queue = (json \ "queue").extract[String]
       val accountId = (json \ "accountId").extract[String]
-      val status = (json \ "status").extract[String]
-      MessageSubscription(exchange, bindingKey, queue, accountId, status)
+      val status = (json \ "status").extract[Option[String]]
+      status match {
+        case Some(s) => MessageSubscription(exchange, bindingKey, queue, accountId, s)
+        case _ => MessageSubscription(exchange, bindingKey, queue, accountId)
+      }
+
   },
   {
     case subscription: MessageSubscription =>
