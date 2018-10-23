@@ -27,11 +27,14 @@ class AmazonSubscriptionDAO(client: DynamoClient, table: String)(implicit ec: Ex
     val matchingFilter = indexAndComponents.map { case (index, _) =>
       s"(bindingKeyComponents[$index] = :$index OR bindingKeyComponents[$index] = :star)"
     }.mkString(" AND ")
-    val filter = s"(status = :active OR status = :transitioning) AND bindingKeyComponentsSize = :componentsSize AND ($matchingFilter)"
+    val filter = s"(#status = :active OR #status = :transitioning) AND bindingKeyComponentsSize = :componentsSize AND ($matchingFilter)"
     val query = client.query[MessageSubscription](
       table,
       "exchange = :exchange",
       Some(filter),
+      expressionAttributeNames = Map(
+        "#status" -> "status"
+      ),
       expressionAttributeValues = Map(
         ":exchange" -> exchange,
         ":star" -> "*",

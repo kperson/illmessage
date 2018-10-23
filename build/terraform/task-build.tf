@@ -3,7 +3,8 @@ resource "aws_ecs_cluster" "illmessage" {
 }
 
 resource "aws_cloudwatch_log_group" "log" {
-  name = "${var.namespace}"
+  name              = "${var.namespace}"
+  retention_in_days = 5
 }
 
 data "template_file" "background_container_definitions" {

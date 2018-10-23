@@ -96,8 +96,6 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.namespace}_tasks_role",
     ]
   }
-
-  
 }
 
 resource "aws_iam_policy" "tasks_policy" {
