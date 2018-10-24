@@ -10,7 +10,6 @@ data "aws_iam_policy_document" "codebuild_assume_role_policy" {
 }
 
 data "aws_iam_policy_document" "codebuild_role_policy" {
-
   # Custom
 
   statement {
@@ -77,7 +76,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
   }
 
-
   statement {
     actions = [
       "s3:*",
@@ -98,7 +96,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
   }
 
-
   statement {
     effect = "Allow"
 
@@ -111,8 +108,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
       "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.namespace}",
     ]
   }
-
-
 
   statement {
     actions = [
@@ -137,6 +132,27 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
   }
 
+  statement {
+    actions = [
+      "firehose:CreateDeliveryStream",
+      "firehose:DescribeDeliveryStream",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+
+  statement {
+    actions = [
+      "firehose:DeleteDeliveryStream",
+      "firehose:UpdateDestination",
+    ]
+
+    resources = [
+      "arn:aws:firehose:${var.region}:${data.aws_caller_identity.current.account_id}:deliverystream/${var.namespace}_*",
+    ]
+  }
 
   # Code build
 
@@ -150,7 +166,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
       "${aws_s3_bucket.state_bucket.arn}",
     ]
   }
-
   statement {
     effect = "Allow"
 
@@ -165,7 +180,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
       "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/${var.namespace}_codebuild:*",
     ]
   }
-
   statement {
     effect = "Allow"
 
@@ -177,7 +191,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
       "*",
     ]
   }
-
   statement {
     effect = "Allow"
 
@@ -193,7 +206,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
     resources = ["*"]
   }
-
   statement {
     effect = "Allow"
 
@@ -203,7 +215,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
     resources = ["arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:network-interface/*"]
   }
-
   statement {
     effect = "Allow"
 
@@ -215,17 +226,15 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
     resources = ["*"]
   }
-
   statement {
     effect = "Allow"
 
     actions = [
       "ecr:*",
     ]
-    
+
     resources = ["arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/${var.namespace}_*"]
   }
-
 }
 
 resource "aws_iam_role" "codebuild" {

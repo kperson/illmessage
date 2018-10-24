@@ -47,7 +47,6 @@ resource "aws_codebuild_project" "codebuild" {
       "name"  = "TASK_SUBNET"
       "value" = "${var.build_subnets[0]}"
     }
-
   }
 
   source {
