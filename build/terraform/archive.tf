@@ -53,7 +53,7 @@ resource "aws_kinesis_firehose_delivery_stream" "archive" {
     role_arn           = "${aws_iam_role.archive.arn}"
     bucket_arn         = "${aws_s3_bucket.archive.arn}"
     prefix             = "added_at=YYYY-MM-DD-HH/"
-    buffer_size        = 256
+    buffer_size        = 100
     buffer_interval    = 300
     compression_format = "GZIP"
   }
