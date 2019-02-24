@@ -28,7 +28,7 @@ trait MessageProcessor extends StreamChangeCaptureHandler {
 
   val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  def handleChange(change: ChangeCapture[DynamoMap]): Unit = {
+  def handleChange(change: ChangeCapture[DynamoMap]) {
     logger.debug(s"processing change, $change")
     change.map { _.flatten } match {
       case New(_, item) =>

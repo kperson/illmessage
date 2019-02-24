@@ -62,8 +62,9 @@ object HttpFixturesFixtures extends RequestBuilding {
     new RequestBuilder(mockRequest.method)(mockRequest.path, body)
   }
 
-  def jsonMatches[A](toMatchJSON: String, expectedJSON: String)(implicit mf: Manifest[A]): Boolean =
+  def jsonMatches[A](toMatchJSON: String, expectedJSON: String)(implicit mf: Manifest[A]): Boolean = {
     read[A](toMatchJSON) == read[A](expectedJSON)
+  }
 
 
   def response[A](file: String, key: String)(implicit mf: Manifest[A]): String = {

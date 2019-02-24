@@ -1,0 +1,13 @@
+{
+  "subscription-response": {
+    "exchange": "e1",
+    "bindingKey": "com.*.hello",
+    "queue": "q1",
+    "accountId": "782056314912",
+    "status": "active",
+    "subscriptionId":"a3f3353d5eab86cf084f520bc8ed6dbc",
+    "status": "active",
+    "bindingKeyComponents":["com","*","hello"],
+    "bindingKeyComponentsSize":3
+  }
+}

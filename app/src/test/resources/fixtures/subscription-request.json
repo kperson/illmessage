@@ -1,0 +1,22 @@
+{
+  "subscription-create": {
+    "method": "POST",
+    "path": "/subscription",
+    "body": {
+      "exchange": "e1",
+      "bindingKey": "com.*.hello",
+      "queue": "q1",
+      "accountId": "782056314912"
+    }
+  },
+  "subscription-delete": {
+    "method": "DELETE",
+    "path": "/subscription/43i943i439043jv/exchange/e1",
+    "body": {
+      "exchange": "e1",
+      "bindingKey": "com.*.hello",
+      "queue": "q1",
+      "accountId": "782056314912"
+    }
+  }
+}
