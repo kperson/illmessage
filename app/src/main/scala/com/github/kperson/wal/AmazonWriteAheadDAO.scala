@@ -53,7 +53,21 @@ class AmazonWriteAheadDAO(client: DynamoClient, walTable: String) extends WriteA
     )
   }
 
-  private def writeWALRecords(records: List[WALRecord], delay: FiniteDuration = 200.milliseconds, allowedIterations: Int = 15): Future[Any] = {
+  def fetchWALRecord(messageId: String, partitionKey: String): Future[Option[WALRecord]] = {
+    client.getItem[WALRecord](
+      walTable,
+      Map(
+        "partitionKey" -> partitionKey,
+        "messageId" -> messageId
+      )
+    )
+  }
+
+  private def writeWALRecords(
+    records: List[WALRecord],
+    delay: FiniteDuration = 200.milliseconds,
+    allowedIterations: Int = 15
+  ): Future[Any] = {
     client.batchPutItems(walTable, records).flatMap {
       case rs if rs.unprocessedInserts.nonEmpty =>
         if(allowedIterations > 1) {

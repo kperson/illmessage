@@ -9,7 +9,7 @@ case class Message(
 ) {
   require(body.length <= 256 * 1024, "message body must be less than or equal to 256 KB")
 
-  def partitionKey = {
+  def partitionKey: String = {
     val text = s"groupId:$groupId:exchange:$exchange"
     java.security.MessageDigest.getInstance("MD5")
       .digest(text.getBytes())

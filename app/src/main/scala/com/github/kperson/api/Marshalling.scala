@@ -5,9 +5,9 @@ import akka.http.scaladsl.marshalling.{Marshaller, ToEntityMarshaller, ToRespons
 import akka.http.scaladsl.model.{HttpRequest, MediaTypes, StatusCode}
 import akka.http.scaladsl.unmarshalling.FromRequestUnmarshaller
 import akka.stream.Materializer
-
 import java.nio.charset.StandardCharsets
 
+import com.github.kperson.serialization.JSONFormats
 import org.json4s.Formats
 import org.json4s.jackson.Serialization._
 
@@ -31,9 +31,7 @@ private class JSONUnmarshaller[T](implicit formats: Formats, mf: Manifest[T]) ex
 
 trait MarshallingSupport {
 
-  def jsonFormats: Formats
-
-  implicit lazy val formats: Formats = jsonFormats
+  implicit lazy val formats: Formats = JSONFormats.formats
 
   implicit def fromResponseMarshaller[T](implicit formats: Formats, mf: Manifest[T]): FromRequestUnmarshaller[T] = new JSONUnmarshaller[T]()
 

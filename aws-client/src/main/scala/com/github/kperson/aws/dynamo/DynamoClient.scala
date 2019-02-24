@@ -21,10 +21,11 @@ case class BatchWriteResults[A](unprocessedInserts: List[A], unprocessedDeletes:
 
 class DynamoClient(
   region: String,
-  credentialsProvider: AWSCredentialsProvider = Credentials.defaultCredentialsProvider
+  endpointOverride: Option[String] = None,
+  credentialsProvider: AWSCredentialsProvider = Credentials.defaultCredentialsProvider,
 ) (implicit val ec: ExecutionContext) {
 
-  private val defaultFormats: Formats = Serialization.formats(NoTypeHints)
+  private def defaultFormats: Formats = Serialization.formats(NoTypeHints)
 
   private def mapToDynamoMap(map: Map[String, Any]): DynamoMap = {
     val defaultFormats: Formats = Serialization.formats(NoTypeHints)
@@ -135,11 +136,12 @@ class DynamoClient(
   }
 
   def request(payload: Array[Byte], target: String): HttpRequest = {
+    val endpoint = endpointOverride.getOrElse(s"https://dynamodb.$region.amazonaws.com")
     new HttpRequest(
       credentialsProvider.getCredentials,
       "dynamodb",
       region,
-      s"https://dynamodb.$region.amazonaws.com",
+      endpoint,
       method = "POST",
       headers = Map(
         "content-type" -> "application/x-amz-json-1.0",

@@ -1,0 +1,33 @@
+[
+  {
+    "TableName": "wal",
+    "AttributeDefinitions": [
+      {
+        "AttributeName": "partitionKey",
+        "AttributeType": "S"
+      },
+      {
+        "AttributeName": "messageId",
+        "AttributeType": "S"
+      }
+    ],
+    "StreamSpecification": {
+      "StreamEnabled": true,
+      "StreamViewType": "NEW_AND_OLD_IMAGES"
+    },
+    "KeySchema": [
+      {
+        "AttributeName": "partitionKey",
+        "KeyType": "HASH"
+      },
+      {
+        "AttributeName": "messageId",
+        "KeyType": "RANGE"
+      }
+    ],
+    "ProvisionedThroughput": {
+      "ReadCapacityUnits": 10,
+      "WriteCapacityUnits": 10
+    }
+  }
+]

@@ -1,11 +1,11 @@
-package com.github.kperson.api
+package com.github.kperson.wal
 
 import akka.http.scaladsl.server
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 
 import com.github.kperson.model.Message
-import com.github.kperson.wal.WriteAheadDAO
+import com.github.kperson.api.MarshallingSupport
 
 import java.util.UUID
 
@@ -29,11 +29,11 @@ case class MessagePayload(
 }
 
 
-trait MessageAPI extends MarshallingSupport {
+trait WriteAheadAPI extends MarshallingSupport {
 
   def writeAheadDAO: WriteAheadDAO
 
-  val messageRoute: server.Route = {
+  val writeAheadRoute: server.Route = {
     path("messages") {
       post {
         decodeRequest {

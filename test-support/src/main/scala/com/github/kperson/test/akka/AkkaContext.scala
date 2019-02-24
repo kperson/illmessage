@@ -1,4 +1,4 @@
-package com.github.kperson.util
+package com.github.kperson.test.akka
 
 import java.util.UUID
 

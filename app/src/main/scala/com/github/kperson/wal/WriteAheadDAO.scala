@@ -2,7 +2,9 @@ package com.github.kperson.wal
 
 import com.github.kperson.model.{Message, MessageSubscription}
 
+
 import scala.concurrent.Future
+
 
 trait WriteAheadDAO {
 
