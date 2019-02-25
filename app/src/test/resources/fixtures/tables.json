@@ -29,5 +29,36 @@
       "ReadCapacityUnits": 10,
       "WriteCapacityUnits": 10
     }
+  },
+  {
+    "TableName": "subscription",
+    "AttributeDefinitions": [
+      {
+        "AttributeName": "exchange",
+        "AttributeType": "S"
+      },
+      {
+        "AttributeName": "subscriptionId",
+        "AttributeType": "S"
+      }
+    ],
+    "StreamSpecification": {
+      "StreamEnabled": true,
+      "StreamViewType": "NEW_AND_OLD_IMAGES"
+    },
+    "KeySchema": [
+      {
+        "AttributeName": "exchange",
+        "KeyType": "HASH"
+      },
+      {
+        "AttributeName": "subscriptionId",
+        "KeyType": "RANGE"
+      }
+    ],
+    "ProvisionedThroughput": {
+      "ReadCapacityUnits": 10,
+      "WriteCapacityUnits": 10
+    }
   }
 ]

@@ -28,7 +28,7 @@ trait SubscriptionAPI extends MarshallingSupport {
       path(Segment / "exchange" / Segment) { (subscriptionId, exchangeId) =>
         delete {
           onSuccess(subscriptionDAO.delete(exchangeId, subscriptionId)) { _ =>
-            complete((StatusCodes.NoContent, ""))
+            complete((StatusCodes.NoContent))
           }
         }
       }
