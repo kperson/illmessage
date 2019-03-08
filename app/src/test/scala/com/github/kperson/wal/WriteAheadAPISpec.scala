@@ -7,6 +7,8 @@ import com.github.kperson.test.spec.IllMessageSpec
 import scala.concurrent.Future
 
 
+
+
 class WriteAheadAPISpec extends IllMessageSpec with ScalatestRouteTest {
 
   "MessageAPI" should "save messages" in {

@@ -7,7 +7,7 @@ import com.github.kperson.aws.ecs.ECSClient
 import com.github.kperson.aws.lambda.LambdaClient
 import com.github.kperson.aws.sqs.SQSClient
 import com.github.kperson.deadletter.{AmazonDeadLetterQueueDAO, DeadLetterQueueDAO}
-import com.github.kperson.queue.{AmazonQueueDAO, QueueDAO}
+import com.github.kperson.message.{AmazonQueueClient, QueueClient}
 import com.github.kperson.subscription.{AmazonSubscriptionDAO, SubscriptionDAO}
 import com.github.kperson.wal.{AmazonWriteAheadDAO, WriteAheadDAO}
 
@@ -37,6 +37,6 @@ trait AppInit {
     config.backgroundTaskArn,
     config.taskVPCConfig
   )
-  val queueDAO: QueueDAO = new AmazonQueueDAO(sqsClient)
+  val queueClient: QueueClient = new AmazonQueueClient(sqsClient, deadLetterQueueDAO)
 
 }
