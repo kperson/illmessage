@@ -60,5 +60,36 @@
       "ReadCapacityUnits": 10,
       "WriteCapacityUnits": 10
     }
+  },
+  {
+    "TableName": "mailbox",
+    "AttributeDefinitions": [
+      {
+        "AttributeName": "subscriptionId",
+        "AttributeType": "S"
+      },
+      {
+        "AttributeName": "createdAt",
+        "AttributeType": "N"
+      }
+    ],
+    "StreamSpecification": {
+      "StreamEnabled": true,
+      "StreamViewType": "NEW_AND_OLD_IMAGES"
+    },
+    "KeySchema": [
+      {
+        "AttributeName": "subscriptionId",
+        "KeyType": "HASH"
+      },
+      {
+        "AttributeName": "createdAt",
+        "KeyType": "RANGE"
+      }
+    ],
+    "ProvisionedThroughput": {
+      "ReadCapacityUnits": 10,
+      "WriteCapacityUnits": 10
+    }
   }
 ]
