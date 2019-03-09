@@ -2,12 +2,12 @@ variable "max_capacity" {
   default = 5000
 }
 
-resource "aws_dynamodb_table" "dead_letter_queue" {
-  name           = "${var.namespace}_dead_letter_queue"
+resource "aws_dynamodb_table" "mailbox" {
+  name           = "${var.namespace}_mailbox"
   read_capacity  = 3
   write_capacity = 3
   hash_key       = "subscriptionId"
-  range_key      = "messageId"
+  range_key      = "createdAt"
 
   attribute {
     name = "subscriptionId"
@@ -15,13 +15,8 @@ resource "aws_dynamodb_table" "dead_letter_queue" {
   }
 
   attribute {
-    name = "messageId"
-    type = "S"
-  }
-
-  ttl {
-    attribute_name = "ttl"
-    enabled        = true
+    name = "createdAt"
+    type = "N"
   }
 
   server_side_encryption {
@@ -100,14 +95,14 @@ module "scale_write_ahead_log" {
   table_arn  = "${aws_dynamodb_table.write_ahead_log.arn}"
 }
 
-module "scale_dead_letter_queue" {
+module "scale_mailbox" {
   source     = "../modules/dynamo-scale"
   namespace  = "${var.namespace}"
-  table_name = "${aws_dynamodb_table.dead_letter_queue.id}"
-  table_arn  = "${aws_dynamodb_table.dead_letter_queue.arn}"
+  table_name = "${aws_dynamodb_table.mailbox.id}"
+  table_arn  = "${aws_dynamodb_table.mailbox.arn}"
 }
 
-module "scale_dead_letter_subscriptions" {
+module "scale_subscriptions" {
   source     = "../modules/dynamo-scale"
   namespace  = "${var.namespace}"
   table_name = "${aws_dynamodb_table.subscriptions.id}"

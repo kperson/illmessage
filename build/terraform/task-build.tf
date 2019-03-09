@@ -12,7 +12,7 @@ data "template_file" "background_container_definitions" {
 
   vars {
     api_image           = "${jsonencode(aws_ecr_repository.repo.repository_url)}"
-    dead_letter_table   = "${jsonencode(aws_dynamodb_table.dead_letter_queue.id)}"
+    mailbox_table       = "${jsonencode(aws_dynamodb_table.mailbox.id)}"
     wal_table           = "${jsonencode(aws_dynamodb_table.write_ahead_log.id)}"
     subscription_table  = "${jsonencode(aws_dynamodb_table.subscriptions.id)}"
     region              = "${jsonencode(var.region)}"

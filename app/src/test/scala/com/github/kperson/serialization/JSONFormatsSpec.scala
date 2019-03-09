@@ -1,6 +1,5 @@
 package com.github.kperson.serialization
 
-import com.github.kperson.deadletter.DeadLetterMessage
 import com.github.kperson.model.{Message, MessageSubscription}
 import com.github.kperson.wal.WALRecord
 
@@ -25,14 +24,6 @@ class JSONFormatsSpec extends FlatSpec with Matchers {
     val recordTwo = WALRecord(message, "ABC", preComputedSubscription = Some(subscription))
     val expectedTwo = read[WALRecord](write(recordTwo))
     expectedTwo should be (recordTwo)
-  }
-
-  it should "serialize dead letter records" in {
-    val dl = DeadLetterMessage(subscription, "MID", message, 1, 2, "REASON 1")
-    val expected = read[DeadLetterMessage](write(dl))
-    expected should be (dl)
-
-    read[Map[String, Any]](write(dl)).get("subscriptionId").isDefined should be (true)
   }
 
 

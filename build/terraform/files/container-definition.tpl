@@ -6,8 +6,8 @@
 				"value": ${wal_table}
 			},
 			{
-				"name": "DEAD_LETTER_TABLE",
-				"value": ${dead_letter_table}
+				"name": "MAILBOX_TABLE",
+				"value": ${mailbox_table}
 			},
 			{
 				"name": "SUBSCRIPTION_TABLE",

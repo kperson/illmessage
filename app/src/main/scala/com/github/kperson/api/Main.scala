@@ -5,7 +5,7 @@ import com.github.kperson.app.AppInit
 
 object Main extends App with AppInit {
 
-  val api = new API(walDAO, subscriptionDAO, deadLetterQueueDAO)
+  val api = new API(walDAO, subscriptionDAO)
   api.run(port = config.port)
 
 }

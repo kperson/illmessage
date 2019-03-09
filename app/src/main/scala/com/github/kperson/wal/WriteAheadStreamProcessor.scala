@@ -1,29 +1,27 @@
-package com.github.kperson.message
+package com.github.kperson.wal
 
 import com.github.kperson.app.AppInit
 import com.github.kperson.aws.dynamo._
+import com.github.kperson.delivery.DeliveryClient
 import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.subscription.SubscriptionDAO
-import com.github.kperson.wal.{WALRecord, WriteAheadDAO}
 
-import org.json4s.jackson.Serialization._
 import org.json4s.Formats
+import org.json4s.jackson.Serialization._
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 
-trait MessageProcessor extends StreamChangeCaptureHandler {
+trait WriteAheadStreamProcessor extends StreamChangeCaptureHandler {
 
   implicit val formats: Formats = JSONFormats.formats
   implicit val ec: ExecutionContext
 
   def subscriptionDAO: SubscriptionDAO
-
   def walDAO: WriteAheadDAO
-
-  def queueClient: QueueClient
+  def deliveryClient: DeliveryClient
 
   val logger: Logger = LoggerFactory.getLogger(getClass)
 
@@ -34,7 +32,7 @@ trait MessageProcessor extends StreamChangeCaptureHandler {
       case _ => None
     }
     item.foreach { record =>
-      Await.result(handleNewWALRecord(record), 10.seconds)
+      Await.result(handleNewWALRecord(record), 30.seconds)
     }
   }
 
@@ -50,10 +48,10 @@ trait MessageProcessor extends StreamChangeCaptureHandler {
           .getOrElse(subscriptionDAO.fetchSubscriptions(record.message.exchange, record.message.routingKey))
       }
       //3. send out the messages
-      rs <- queueClient.sendMessages(allSubscriptions, record.copy(preComputedSubscription = None))
+      rs <- deliveryClient.queueMessages(allSubscriptions, record.copy(preComputedSubscription = None))
     } yield rs
   }
 }
 
 //concrete implementation
-class MessageProcessorImpl extends MessageProcessor with AppInit
+class WriteAheadStreamProcessorImpl extends WriteAheadStreamProcessor with AppInit

@@ -14,6 +14,8 @@ class AppConfig(config: Config = ConfigFactory.load().getConfig("app")) {
 
   def walTable: String = config.getString("aws.wal-table")
 
+  def deliveryTable: String = config.getString("aws.mailbox-table")
+
   def subscriptionTable: String = config.getString("aws.subscription-table")
 
   def deadLetterTable: String = config.getString("aws.dead-letter-table")

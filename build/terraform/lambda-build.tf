@@ -18,7 +18,7 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      DEAD_LETTER_TABLE   = "${aws_dynamodb_table.dead_letter_queue.id}"
+      MAILBOX_TABLE       = "${aws_dynamodb_table.mailbox.id}"
       WAL_TABLE           = "${aws_dynamodb_table.write_ahead_log.id}"
       SUBSCRIPTION_TABLE  = "${aws_dynamodb_table.subscriptions.id}"
       REGION              = "${var.region}"
@@ -30,11 +30,11 @@ resource "aws_lambda_function" "api" {
   }
 }
 
-resource "aws_lambda_function" "processor" {
+resource "aws_lambda_function" "wal_processor" {
   filename         = "${module.extract_jar.output_file}"
-  function_name    = "${var.namespace}_processor"
+  function_name    = "${var.namespace}_wal_processor"
   role             = "${aws_iam_role.tasks_role.arn}"
-  handler          = "com.github.kperson.message.MessageProcessorImpl"
+  handler          = "com.github.kperson.wal.WriteAheadStreamProcessorImpl"
   runtime          = "java8"
   memory_size      = 512
   timeout          = 360
@@ -43,7 +43,7 @@ resource "aws_lambda_function" "processor" {
 
   environment {
     variables = {
-      DEAD_LETTER_TABLE   = "${aws_dynamodb_table.dead_letter_queue.id}"
+      MAILBOX_TABLE       = "${aws_dynamodb_table.mailbox.id}"
       WAL_TABLE           = "${aws_dynamodb_table.write_ahead_log.id}"
       SUBSCRIPTION_TABLE  = "${aws_dynamodb_table.subscriptions.id}"
       REGION              = "${var.region}"

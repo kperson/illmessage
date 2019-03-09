@@ -6,7 +6,7 @@ import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.aws.ecs.ECSClient
 import com.github.kperson.aws.lambda.LambdaClient
 import com.github.kperson.aws.sqs.SQSClient
-import com.github.kperson.deadletter.{AmazonDeadLetterQueueDAO, DeadLetterQueueDAO}
+import com.github.kperson.delivery.{AmazonDeliveryClient, DeliveryClient}
 import com.github.kperson.message.{AmazonQueueClient, QueueClient}
 import com.github.kperson.subscription.{AmazonSubscriptionDAO, SubscriptionDAO}
 import com.github.kperson.wal.{AmazonWriteAheadDAO, WriteAheadDAO}
@@ -29,14 +29,7 @@ trait AppInit {
 
   val walDAO: WriteAheadDAO = new AmazonWriteAheadDAO(dynamoClient, config.walTable)
   val subscriptionDAO: SubscriptionDAO = new AmazonSubscriptionDAO(dynamoClient, config.subscriptionTable)
-  val deadLetterQueueDAO: DeadLetterQueueDAO = new AmazonDeadLetterQueueDAO(
-    dynamoClient,
-    config.deadLetterTable,
-    walDAO,
-    ecsClient,
-    config.backgroundTaskArn,
-    config.taskVPCConfig
-  )
-  val queueClient: QueueClient = new AmazonQueueClient(sqsClient, deadLetterQueueDAO)
+  val queueClient: QueueClient = new AmazonQueueClient(sqsClient)
+  val deliveryClient: DeliveryClient = new AmazonDeliveryClient(dynamoClient, config.deliveryTable)
 
 }
