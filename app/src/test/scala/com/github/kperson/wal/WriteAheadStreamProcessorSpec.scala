@@ -1,6 +1,6 @@
 package com.github.kperson.wal
 
-import com.github.kperson.delivery.DeliveryClient
+import com.github.kperson.delivery.DeliveryDAO
 import com.github.kperson.model.{Message, MessageSubscription}
 import com.github.kperson.subscription.SubscriptionDAO
 import com.github.kperson.test.spec.IllMessageSpec
@@ -34,8 +34,8 @@ class WriteAheadStreamProcessorSpec extends IllMessageSpec {
        .returning(Future.successful(true))
 
 
-     val deliveryClient: DeliveryClient = mock[DeliveryClient]
-     (deliveryClient.queueMessages _)
+     val deliveryDAO: DeliveryDAO = mock[DeliveryDAO]
+     (deliveryDAO.queueMessages _)
        .expects(List(subscription), walRecord)
        .returning(Future.successful(true))
     })

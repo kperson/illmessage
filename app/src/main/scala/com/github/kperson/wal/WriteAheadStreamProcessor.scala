@@ -2,7 +2,7 @@ package com.github.kperson.wal
 
 import com.github.kperson.app.AppInit
 import com.github.kperson.aws.dynamo._
-import com.github.kperson.delivery.DeliveryClient
+import com.github.kperson.delivery.DeliveryDAO
 import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.subscription.SubscriptionDAO
 
@@ -21,7 +21,7 @@ trait WriteAheadStreamProcessor extends StreamChangeCaptureHandler {
 
   def subscriptionDAO: SubscriptionDAO
   def walDAO: WriteAheadDAO
-  def deliveryClient: DeliveryClient
+  def deliveryDAO: DeliveryDAO
 
   val logger: Logger = LoggerFactory.getLogger(getClass)
 
@@ -48,7 +48,7 @@ trait WriteAheadStreamProcessor extends StreamChangeCaptureHandler {
           .getOrElse(subscriptionDAO.fetchSubscriptions(record.message.exchange, record.message.routingKey))
       }
       //3. send out the messages
-      rs <- deliveryClient.queueMessages(allSubscriptions, record.copy(preComputedSubscription = None))
+      rs <- deliveryDAO.queueMessages(allSubscriptions, record.copy(preComputedSubscription = None))
     } yield rs
   }
 }

@@ -5,8 +5,9 @@ import com.github.kperson.wal.WALRecord
 
 import scala.concurrent.Future
 
-trait DeliveryClient {
+trait DeliveryDAO {
 
   def queueMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[Any]
+  def remove(delivery: Delivery): Future[Any]
 
 }

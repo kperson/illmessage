@@ -13,22 +13,30 @@ import org.json4s.Formats
 import scala.concurrent.Future
 
 
-class AmazonDeliveryClient(client: DynamoClient, deliveryTable: String) extends DeliveryClient {
+class AmazonDeliveryDAO(client: DynamoClient, deliveryTable: String) extends DeliveryDAO {
 
   import client.ec
+  implicit val formats: Formats = JSONFormats.formats
 
-  def queueMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[Boolean] = {
+
+  def queueMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[List[Delivery]] = {
     val groupings = subscriptions.grouped(25).toList
     val groupedJobs = groupings.map { queueGroupedMessages(_, record) }
-    Future.sequence(groupedJobs).map { _ => true }
+    Future.sequence(groupedJobs).map { _.flatten.toList }
   }
 
-  private def queueGroupedMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[Boolean] = {
-    implicit val formats: Formats = JSONFormats.formats
+  private def queueGroupedMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[List[Delivery]] = {
     val deliveries = subscriptions.map { Delivery(record.message, _, new Date()) }
     Backoff.runBackoffTask(5, deliveries) { items =>
       client.batchPutItems(deliveryTable, items).map { _.unprocessedInserts }
-    }
+    }.map { _ => deliveries }
+  }
+
+  def remove(delivery: Delivery): Future[Any] = {
+    client.deleteItem[Delivery](deliveryTable, Map(
+      "subscriptionId" -> delivery.subscription.id,
+      "createdAt" -> delivery.createdAt.getTime
+    ))
   }
 
 }
