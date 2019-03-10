@@ -5,37 +5,41 @@ import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.test.dynamo.DynamoSupport
 import com.github.kperson.test.spec.IllMessageSpec
 import com.github.kperson.wal.WALRecord
+import org.json4s.Formats
 
 
 class AmazonDeliveryDAOSpec extends IllMessageSpec with DynamoSupport with TestSupport {
 
-  implicit val formats = JSONFormats.formats
+  implicit val formats: Formats = JSONFormats.formats
 
-  "AmazonDeliveryClient" should "queue messages" in withDynamo { (_, _, dynamoClient) =>
-    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox")
+  "AmazonDeliveryDAO" should "queue messages" in withDynamo { (_, _, dynamoClient) =>
+    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")
     import dynamoClient.ec
     val job = for {
       deliveries <- client.queueMessages(List(subscription), record)
       fetch <- dynamoClient.getItem[Delivery](
         "mailbox",
-        Map("subscriptionId" -> subscription.id, "createdAt" -> deliveries.head.createdAt.getTime)
+        Map("subscriptionId" -> subscription.id, "sequenceId" -> deliveries.head.sequenceId)
       )
-    } yield fetch
+    } yield {
+      fetch
+    }
 
+    val expectedValue = Some(Delivery(message, subscription, Int.MinValue + 1))
     whenReady(job, secondsTimeOut(3)) { rs =>
-      rs.isDefined should be (true)
+      rs should be (expectedValue)
     }
   }
 
   it should "remove messages" in withDynamo { (_, _, dynamoClient) =>
-    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox")
+    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")
     import dynamoClient.ec
     val job = for {
       deliveries <- client.queueMessages(List(subscription), record)
       delivery <- client.remove(deliveries.head).map { _  => deliveries.head }
       fetch <- dynamoClient.getItem[Delivery](
         "mailbox",
-        Map("subscriptionId" -> subscription.id, "createdAt" -> delivery.createdAt.getTime)
+        Map("subscriptionId" -> subscription.id, "sequenceId" -> delivery.sequenceId)
       )
     } yield fetch
 
@@ -59,8 +63,7 @@ trait TestSupport {
     "e1",
     "com.*.hello",
     "q1",
-    "782056314912",
-    "active"
+    "782056314912"
   )
 
   val record = WALRecord(

@@ -30,7 +30,8 @@ trait DynamoSupport {
     val runArgs = Array("docker", "run", "-d", "--name", containerName, "-p", s"$port:8000", "amazon/dynamodb-local")
     val runProcess = Runtime.getRuntime().exec(runArgs)
     runProcess.waitFor()
-    Thread.sleep(3000)
+
+    Thread.sleep(3200)
 
     try {
       val endpoint = s"http://localhost:${port}"

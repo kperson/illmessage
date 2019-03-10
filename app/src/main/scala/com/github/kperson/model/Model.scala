@@ -1,5 +1,7 @@
 package com.github.kperson.model
 
+import com.github.kperson.util.MD5
+
 case class Message(
   routingKey: String,
   body: String,
@@ -10,12 +12,7 @@ case class Message(
   require(body.length <= 256 * 1024, "message body must be less than or equal to 256 KB")
 
   def partitionKey: String = {
-    val text = s"groupId:$groupId:exchange:$exchange"
-    java.security.MessageDigest.getInstance("MD5")
-      .digest(text.getBytes())
-      .map(0xFF & _)
-      .map { "%02x".format(_) }
-      .foldLeft(""){_ + _}
+    MD5.hash(s"groupId:$groupId:exchange:$exchange")
   }
 
 }
@@ -32,12 +29,7 @@ case class MessageSubscription(
   require(allowedStatuses.contains(status), s"status must be ${allowedStatuses.mkString(", ")}")
 
   def id: String = {
-    val text = s"exchange:$exchange:bindingKey:$bindingKey:queue:$queue:accountId:$accountId"
-    java.security.MessageDigest.getInstance("MD5")
-      .digest(text.getBytes())
-      .map(0xFF & _)
-      .map { "%02x".format(_) }
-      .foldLeft(""){_ + _}
+    MD5.hash(s"exchange:$exchange:bindingKey:$bindingKey:queue:$queue:accountId:$accountId")
   }
 
   def bindingKeyComponents: List[String] = bindingKey.split("\\.").toList

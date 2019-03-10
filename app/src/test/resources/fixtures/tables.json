@@ -69,7 +69,7 @@
         "AttributeType": "S"
       },
       {
-        "AttributeName": "createdAt",
+        "AttributeName": "sequenceId",
         "AttributeType": "N"
       }
     ],
@@ -83,8 +83,27 @@
         "KeyType": "HASH"
       },
       {
-        "AttributeName": "createdAt",
+        "AttributeName": "sequenceId",
         "KeyType": "RANGE"
+      }
+    ],
+    "ProvisionedThroughput": {
+      "ReadCapacityUnits": 10,
+      "WriteCapacityUnits": 10
+    }
+  },
+  {
+    "TableName": "subMessageSequence",
+    "AttributeDefinitions": [
+      {
+        "AttributeName": "subscriptionId",
+        "AttributeType": "S"
+      }
+    ],
+    "KeySchema": [
+      {
+        "AttributeName": "subscriptionId",
+        "KeyType": "HASH"
       }
     ],
     "ProvisionedThroughput": {

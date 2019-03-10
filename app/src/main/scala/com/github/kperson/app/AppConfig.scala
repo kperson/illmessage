@@ -18,6 +18,8 @@ class AppConfig(config: Config = ConfigFactory.load().getConfig("app")) {
 
   def subscriptionTable: String = config.getString("aws.subscription-table")
 
+  def subscriptionMessageSequenceTable: String = config.getString("aws.subscription-message-sequence-table")
+
   def deadLetterTable: String = config.getString("aws.dead-letter-table")
 
   def port: Int = config.getString("port").toInt
