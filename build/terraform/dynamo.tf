@@ -7,7 +7,7 @@ resource "aws_dynamodb_table" "mailbox" {
   read_capacity  = 3
   write_capacity = 3
   hash_key       = "subscriptionId"
-  range_key      = "createdAt"
+  range_key      = "sequenceId"
 
   attribute {
     name = "subscriptionId"
@@ -15,7 +15,7 @@ resource "aws_dynamodb_table" "mailbox" {
   }
 
   attribute {
-    name = "createdAt"
+    name = "sequenceId"
     type = "N"
   }
 
@@ -23,7 +23,7 @@ resource "aws_dynamodb_table" "mailbox" {
     enabled = true
   }
 
-  stream_enabled = false
+  stream_enabled = true
 
   lifecycle {
     ignore_changes = ["read_capacity", "write_capacity"]
@@ -88,6 +88,36 @@ resource "aws_dynamodb_table" "subscriptions" {
   }
 }
 
+resource "aws_dynamodb_table" "sub_message_sequence" {
+  name           = "${var.namespace}_sub_message_sequence"
+  read_capacity  = 3
+  write_capacity = 3
+  hash_key       = "subscriptionId"
+  range_key      = "groupId"
+
+  attribute {
+    name = "subscriptionId"
+    type = "S"
+  }
+
+  attribute {
+    name = "groupId"
+    type = "S"
+  }
+
+  server_side_encryption {
+    enabled = true
+  }
+
+  stream_enabled = true
+
+  stream_view_type = "NEW_AND_OLD_IMAGES"
+
+  lifecycle {
+    ignore_changes = ["read_capacity", "write_capacity"]
+  }
+}
+
 module "scale_write_ahead_log" {
   source     = "../modules/dynamo-scale"
   namespace  = "${var.namespace}"
@@ -107,4 +137,11 @@ module "scale_subscriptions" {
   namespace  = "${var.namespace}"
   table_name = "${aws_dynamodb_table.subscriptions.id}"
   table_arn  = "${aws_dynamodb_table.subscriptions.arn}"
+}
+
+module "scale_sub_message_sequence" {
+  source     = "../modules/dynamo-scale"
+  namespace  = "${var.namespace}"
+  table_name = "${aws_dynamodb_table.sub_message_sequence.id}"
+  table_arn  = "${aws_dynamodb_table.sub_message_sequence.arn}"
 }

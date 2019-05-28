@@ -1,8 +1,11 @@
 package com.github.kperson.message
 
 import com.github.kperson.aws.sqs.SQSClient
-import com.github.kperson.model.MessageSubscription
-import com.github.kperson.wal.WALRecord
+import com.github.kperson.delivery.Delivery
+import com.github.kperson.serialization.JSONFormats
+
+import org.json4s.Formats
+import org.json4s.jackson.Serialization.write
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -11,38 +14,17 @@ class AmazonQueueClient(
   sqsClient: SQSClient,
 )(implicit ec: ExecutionContext) extends QueueClient {
 
-  def sendMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[Any] = {
+  implicit val formats: Formats = JSONFormats.formats
 
-    val subscriptionsPerQueue = subscriptions
-      .groupBy { sub => (sub.accountId, sub.queue) }
-      .map { case (_, l) => l.head }
-      .toList
-    val sends: List[Future[Any]] = subscriptionsPerQueue.map { sub =>
-      sendMessage(
-        sub.queue,
-        record.message.body,
-        sub.id,
-        record.messageId,
-        sub.accountId
-      )
-    }
-    if (sends.nonEmpty) Future.sequence(sends) else Future.successful(true)
-  }
-
-  private def sendMessage(
-   queueName: String,
-   messageBody: String,
-   subscriptionId: String,
-   messageId: String,
-   accountId: String
-  ): Future[Any] = {
+  def sendMessage(delivery: Delivery): Future[Any] = {
+    val targetIsFiFo = delivery.subscription.queue.endsWith(".fifo")
     sqsClient.sendMessage(
-      queueName,
-      messageBody,
+      delivery.subscription.queue,
+      write(delivery),
       None,
-      if (queueName.endsWith(".fifo")) Some(messageId) else None,
-      if (queueName.endsWith(".fifo")) Some(subscriptionId) else None,
-      Some(accountId)
+      if (targetIsFiFo) Some(delivery.messageId) else None,
+      if (targetIsFiFo) Some(delivery.subscription.id) else None,
+      Some(delivery.subscription.accountId)
     )
   }
 

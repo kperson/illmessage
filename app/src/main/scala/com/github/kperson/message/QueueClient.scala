@@ -1,12 +1,11 @@
 package com.github.kperson.message
 
-import com.github.kperson.model.MessageSubscription
-import com.github.kperson.wal.WALRecord
+import com.github.kperson.delivery.Delivery
 
 import scala.concurrent.Future
 
 trait QueueClient {
 
-  def sendMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[Any]
+  def sendMessage(delivery: Delivery): Future[Any]
 
 }

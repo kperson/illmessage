@@ -26,7 +26,7 @@ class AmazonDeliveryDAOSpec extends IllMessageSpec with DynamoSupport with TestS
       fetch
     }
 
-    val expectedValue = Some(Delivery(message, subscription, Int.MinValue + 1, "inFlight"))
+    val expectedValue = Some(Delivery(message, subscription, Int.MinValue + 1, "inFlight", record.messageId))
     whenReady(job, secondsTimeOut(3)) { rs =>
       rs should be (expectedValue)
     }

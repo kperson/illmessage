@@ -32,7 +32,7 @@ class AmazonDeliveryDAO(
           //if there are no pending message for this group and subscription, allow it be sent immediately
           //otherwise, set it to pending
           val status = if (dId == startingValue + 1L) "inFlight" else "pending"
-          Delivery(record.message, sub, dId, status)
+          Delivery(record.message, sub, dId, status, record.messageId)
         }
       }
     )

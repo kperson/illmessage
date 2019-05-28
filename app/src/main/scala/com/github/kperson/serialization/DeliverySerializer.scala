@@ -13,7 +13,8 @@ class DeliverySerializer extends CustomSerializer[Delivery](format => (
       val subscription = (json \ "subscription").extract[MessageSubscription]
       val sequenceId = (json \ "sequenceId").extract[Long]
       val status = (json \ "status").extract[String]
-      Delivery(message, subscription, sequenceId, status)
+      val messageId = (json \ "messageId").extract[String]
+      Delivery(message, subscription, sequenceId, status, messageId)
   },
   {
     case delivery: Delivery =>
@@ -24,6 +25,7 @@ class DeliverySerializer extends CustomSerializer[Delivery](format => (
         JField("subscriptionId", JString(delivery.subscription.id)) ::
         JField("sequenceId", JLong(delivery.sequenceId)) ::
         JField("status", JString(delivery.status)) ::
+        JField("messageId", JString(delivery.messageId)) ::
         Nil
       )
   }

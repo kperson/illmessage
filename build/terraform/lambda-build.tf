@@ -18,14 +18,12 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      MAILBOX_TABLE       = "${aws_dynamodb_table.mailbox.id}"
-      WAL_TABLE           = "${aws_dynamodb_table.write_ahead_log.id}"
-      SUBSCRIPTION_TABLE  = "${aws_dynamodb_table.subscriptions.id}"
-      REGION              = "${var.region}"
-      BACKGROUND_TASK_ARN = "${aws_ecs_task_definition.background.arn}"
-      LOG_LEVEL           = "INFO"
-      TASK_SUBNET         = "${var.task_subnet}"
-      TASK_SECURITY_GROUP = "${var.task_security_group}"
+      MAILBOX_TABLE              = "${aws_dynamodb_table.mailbox.id}"
+      WAL_TABLE                  = "${aws_dynamodb_table.write_ahead_log.id}"
+      SUBSCRIPTION_TABLE         = "${aws_dynamodb_table.subscriptions.id}"
+      SUBSCRIPTION_MESSAGE_TABLE = "${aws_dynamodb_table.sub_message_sequence.id}"
+      REGION                     = "${var.region}"
+      LOG_LEVEL                  = "INFO"
     }
   }
 }
@@ -43,22 +41,51 @@ resource "aws_lambda_function" "wal_processor" {
 
   environment {
     variables = {
-      MAILBOX_TABLE       = "${aws_dynamodb_table.mailbox.id}"
-      WAL_TABLE           = "${aws_dynamodb_table.write_ahead_log.id}"
-      SUBSCRIPTION_TABLE  = "${aws_dynamodb_table.subscriptions.id}"
-      REGION              = "${var.region}"
-      BACKGROUND_TASK_ARN = "${aws_ecs_task_definition.background.arn}"
-      LOG_LEVEL           = "INFO"
-      TASK_SUBNET         = "${var.task_subnet}"
-      TASK_SECURITY_GROUP = "${var.task_security_group}"
+      MAILBOX_TABLE              = "${aws_dynamodb_table.mailbox.id}"
+      WAL_TABLE                  = "${aws_dynamodb_table.write_ahead_log.id}"
+      SUBSCRIPTION_TABLE         = "${aws_dynamodb_table.subscriptions.id}"
+      SUBSCRIPTION_MESSAGE_TABLE = "${aws_dynamodb_table.sub_message_sequence.id}"
+      REGION                     = "${var.region}"
+      LOG_LEVEL                  = "INFO"
     }
   }
 }
 
-resource "aws_lambda_event_source_mapping" "processor" {
+resource "aws_lambda_event_source_mapping" "wal_processor" {
   batch_size        = 100
   event_source_arn  = "${aws_dynamodb_table.write_ahead_log.stream_arn}"
   enabled           = true
-  function_name     = "${aws_lambda_function.processor.arn}"
+  function_name     = "${aws_lambda_function.wal_processor.arn}"
+  starting_position = "LATEST"
+}
+
+resource "aws_lambda_function" "delivery_processor" {
+  filename         = "${module.extract_jar.output_file}"
+  function_name    = "${var.namespace}_delivery_processor"
+  role             = "${aws_iam_role.tasks_role.arn}"
+  handler          = "com.github.kperson.delivery.DeliveryStreamProcessorImpl"
+  runtime          = "java8"
+  memory_size      = 512
+  timeout          = 360
+  publish          = true
+  source_code_hash = "${base64sha256(file(module.extract_jar.output_file))}"
+
+  environment {
+    variables = {
+      MAILBOX_TABLE              = "${aws_dynamodb_table.mailbox.id}"
+      WAL_TABLE                  = "${aws_dynamodb_table.write_ahead_log.id}"
+      SUBSCRIPTION_TABLE         = "${aws_dynamodb_table.subscriptions.id}"
+      SUBSCRIPTION_MESSAGE_TABLE = "${aws_dynamodb_table.sub_message_sequence.id}"
+      REGION                     = "${var.region}"
+      LOG_LEVEL                  = "INFO"
+    }
+  }
+}
+
+resource "aws_lambda_event_source_mapping" "delivery_processor" {
+  batch_size        = 100
+  event_source_arn  = "${aws_dynamodb_table.mailbox.stream_arn}"
+  enabled           = true
+  function_name     = "${aws_lambda_function.delivery_processor.arn}"
   starting_position = "LATEST"
 }
