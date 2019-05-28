@@ -13,17 +13,13 @@ class JSONFormatsSpec extends FlatSpec with Matchers {
   implicit val formats: Formats = JSONFormats.formats
 
   val message = Message("abc.321", "b2", "e1", groupId = "g1")
-  val subscription = MessageSubscription("e1", "b1", "q1", "a1")
+  val subscription = MessageSubscription("e1", "b1", "q1", "a1", "active")
 
   "JSONFormats" should "serialize wal records" in {
     val recordOne = WALRecord(message, "ABC")
     val expectedOne = read[WALRecord](write(recordOne))
     expectedOne should be (recordOne)
     read[Map[String, Any]](write(recordOne)).get("partitionKey").isDefined should be (true)
-
-    val recordTwo = WALRecord(message, "ABC", preComputedSubscription = Some(subscription))
-    val expectedTwo = read[WALRecord](write(recordTwo))
-    expectedTwo should be (recordTwo)
   }
 
 

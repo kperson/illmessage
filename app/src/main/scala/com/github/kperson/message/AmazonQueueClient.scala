@@ -3,11 +3,8 @@ package com.github.kperson.message
 import com.github.kperson.aws.sqs.SQSClient
 import com.github.kperson.model.MessageSubscription
 import com.github.kperson.wal.WALRecord
-import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.duration._
 
 
 class AmazonQueueClient(
@@ -15,8 +12,6 @@ class AmazonQueueClient(
 )(implicit ec: ExecutionContext) extends QueueClient {
 
   def sendMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[Any] = {
-
-    val logger: Logger = LoggerFactory.getLogger(getClass)
 
     val subscriptionsPerQueue = subscriptions
       .groupBy { sub => (sub.accountId, sub.queue) }
@@ -28,8 +23,7 @@ class AmazonQueueClient(
         record.message.body,
         sub.id,
         record.messageId,
-        sub.accountId,
-        record.message.delayInSeconds.map { _.seconds }
+        sub.accountId
       )
     }
     if (sends.nonEmpty) Future.sequence(sends) else Future.successful(true)
@@ -40,13 +34,12 @@ class AmazonQueueClient(
    messageBody: String,
    subscriptionId: String,
    messageId: String,
-   accountId: String,
-   delay: Option[FiniteDuration]
+   accountId: String
   ): Future[Any] = {
     sqsClient.sendMessage(
       queueName,
       messageBody,
-      delay,
+      None,
       if (queueName.endsWith(".fifo")) Some(messageId) else None,
       if (queueName.endsWith(".fifo")) Some(subscriptionId) else None,
       Some(accountId)

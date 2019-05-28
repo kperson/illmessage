@@ -14,7 +14,6 @@ case class MessagePayload(
   routingKey: String,
   body: String,
   exchange: String,
-  delayInSeconds: Option[Int] = None,
   groupId: Option[String] = None
  ) {
 
@@ -22,7 +21,6 @@ case class MessagePayload(
     routingKey,
     body,
     exchange,
-    delayInSeconds,
     groupId.getOrElse(UUID.randomUUID().toString.replace("-", ""))
   )
 

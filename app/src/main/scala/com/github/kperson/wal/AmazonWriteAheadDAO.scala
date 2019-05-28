@@ -3,7 +3,7 @@ package com.github.kperson.wal
 import java.util.UUID
 
 import com.github.kperson.aws.dynamo.DynamoClient
-import com.github.kperson.model.{Message, MessageSubscription}
+import com.github.kperson.model.Message
 import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.util.Backoff
 
@@ -14,8 +14,7 @@ import scala.concurrent.Future
 
 case class WALRecord(
   message: Message,
-  messageId: String,
-  preComputedSubscription: Option[MessageSubscription] = None
+  messageId: String
 )
 
 class AmazonWriteAheadDAO(client: DynamoClient, walTable: String) extends WriteAheadDAO {
@@ -25,17 +24,13 @@ class AmazonWriteAheadDAO(client: DynamoClient, walTable: String) extends WriteA
   import client.ec
 
   def write(messages: List[Message]): Future[List[String]] = {
-    writeWithSubscription(messages.map { (_, None) })
-  }
-
-  def writeWithSubscription(messagesSubscriptions: List[(Message, Option[MessageSubscription])]): Future[List[String]] = {
-    val transactionGroups = messagesSubscriptions.map { case (message, subscriptions) =>
+    val transactionGroups = messages.map { message =>
       val timestamp = "%014d".format(System.currentTimeMillis())
       val randomId = UUID.randomUUID().toString.replace("-", "")
       val messageId = s"$timestamp-$randomId"
-      WALRecord(message, messageId, subscriptions)
+      WALRecord(message, messageId)
     }.grouped(25).toList
-    Future.sequence(transactionGroups.map { writeWALRecords(_) })
+    Future.sequence(transactionGroups.map(writeWALRecords))
     .map { _ =>
       transactionGroups.flatten.map { _.messageId }
     }
@@ -64,7 +59,7 @@ class AmazonWriteAheadDAO(client: DynamoClient, walTable: String) extends WriteA
   private def writeWALRecords(
     records: List[WALRecord]
   ): Future[Any] = {
-    Backoff.runBackoffTask(5, records) { items =>
+    Backoff.runBackoffTask(7, 2, records) { items =>
       client.batchPutItems(walTable, items).map { _.unprocessedInserts }
     }
   }

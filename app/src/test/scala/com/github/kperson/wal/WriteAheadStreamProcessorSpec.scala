@@ -14,13 +14,12 @@ class WriteAheadStreamProcessorSpec extends IllMessageSpec {
     "my-r-key-1",
     "hello world",
     "exchange-one",
-    None,
     "group-one"
   )
 
-  val walRecord = WALRecord(message, "id-one", None)
+  val walRecord = WALRecord(message, "id-one")
 
-  val subscription = MessageSubscription(message.exchange, message.routingKey, "q1", "1234")
+  val subscription = MessageSubscription(message.exchange, message.routingKey, "q1", "1234", "active")
 
   def withMocks(testCode: WriteAheadStreamProcessor => Any)  {
    testCode(new WriteAheadStreamProcessor {
@@ -48,13 +47,6 @@ class WriteAheadStreamProcessorSpec extends IllMessageSpec {
       .returning(Future.successful(List(subscription)))
 
     val job = processor.handleNewWALRecord(walRecord)
-    whenReady(job, secondsTimeOut(3)) { _ => }
-  }
-
-  it should "use pre computed subscriptions" in withMocks { processor =>
-    val walRecordPreComputed = walRecord.copy(preComputedSubscription = Some(subscription))
-
-    val job = processor.handleNewWALRecord(walRecordPreComputed)
     whenReady(job, secondsTimeOut(3)) { _ => }
   }
 

@@ -1,6 +1,6 @@
 package com.github.kperson.wal
 
-import com.github.kperson.model.{Message, MessageSubscription}
+import com.github.kperson.model.Message
 import com.github.kperson.test.dynamo.DynamoSupport
 import com.github.kperson.test.spec.IllMessageSpec
 
@@ -13,7 +13,6 @@ class AmazonWriteAheadDAOSpec extends IllMessageSpec with DynamoSupport {
     "my-r-key-1",
     "hello world",
     "exchange-one",
-    None,
     "group-one"
   )
 
@@ -27,27 +26,6 @@ class AmazonWriteAheadDAOSpec extends IllMessageSpec with DynamoSupport {
 
     whenReady(writeFetch, secondsTimeOut(3)) { results =>
       results should be (Some(message))
-    }
-  }
-
-  it should "write messages with subscriptions" in withDynamo { (_, _, client) =>
-    val dao = new AmazonWriteAheadDAO(client, "wal")
-    val messageSubscription = Some(MessageSubscription(
-      "exchange-one",
-      "my-r-key-1",
-      "q1", "my-aws-account",
-      "active"
-    ))
-    val payload = (message, messageSubscription)
-
-    val writeFetch = for {
-      ids <- dao.writeWithSubscription(List(payload))
-      r <- dao.fetchWALRecord(ids.head, message.partitionKey)
-    } yield r.map { rs => (rs.message, rs.preComputedSubscription) }
-
-
-    whenReady(writeFetch, secondsTimeOut(3)) { results =>
-      results.get should be (payload)
     }
   }
 

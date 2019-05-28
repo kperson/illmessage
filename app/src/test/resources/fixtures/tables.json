@@ -98,12 +98,20 @@
       {
         "AttributeName": "subscriptionId",
         "AttributeType": "S"
+      },
+      {
+        "AttributeName": "groupId",
+        "AttributeType": "S"
       }
     ],
     "KeySchema": [
       {
         "AttributeName": "subscriptionId",
         "KeyType": "HASH"
+      },
+      {
+        "AttributeName": "groupId",
+        "KeyType": "RANGE"
       }
     ],
     "ProvisionedThroughput": {

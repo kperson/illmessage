@@ -16,6 +16,10 @@ class AmazonSubscriptionDAO(client: DynamoClient, table: String)(implicit ec: Ex
     fetchSubscriptionsHelper(exchange, routingKey)
   }
 
+  def fetchSubscriptionById(exchange: String, subscriptionId: String): Future[Option[MessageSubscription]] = {
+    client.getItem[MessageSubscription](table, Map("exchange" -> exchange, "subscriptionId" -> subscriptionId))
+  }
+
   private def fetchSubscriptionsHelper(
     exchange: String,
     routingKey: String,
@@ -27,7 +31,7 @@ class AmazonSubscriptionDAO(client: DynamoClient, table: String)(implicit ec: Ex
     val matchingFilter = indexAndComponents.map { case (index, _) =>
       s"(bindingKeyComponents[$index] = :$index OR bindingKeyComponents[$index] = :star)"
     }.mkString(" AND ")
-    val filter = s"(#status = :active OR #status = :transitioning OR #status = :locked) AND bindingKeyComponentsSize = :componentsSize AND ($matchingFilter)"
+    val filter = s"#status = :active AND bindingKeyComponentsSize = :componentsSize AND ($matchingFilter)"
     val query = client.query[MessageSubscription](
       table,
       "exchange = :exchange",
@@ -39,8 +43,6 @@ class AmazonSubscriptionDAO(client: DynamoClient, table: String)(implicit ec: Ex
         ":exchange" -> exchange,
         ":star" -> "*",
         ":active" -> "active",
-        ":transitioning" -> "transitioning",
-        ":locked" -> "locked",
         ":componentsSize" -> routingKeyComponents.size
       ) ++ indexAndComponents.map { case (index, key) =>
         s":$index" -> key

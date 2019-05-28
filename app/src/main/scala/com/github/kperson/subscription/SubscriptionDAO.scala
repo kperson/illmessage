@@ -11,7 +11,8 @@ trait SubscriptionDAO {
 
   def fetchSubscriptions(exchange: String, routingKey: String): Future[List[MessageSubscription]]
 
-  def delete(exchange: String, subscriptionId: String): Future[Option[MessageSubscription]]
+  def fetchSubscriptionById(exchange: String, subscriptionId: String): Future[Option[MessageSubscription]]
 
+  def delete(exchange: String, subscriptionId: String): Future[Option[MessageSubscription]]
 
 }

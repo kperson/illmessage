@@ -6,7 +6,6 @@ case class Message(
   routingKey: String,
   body: String,
   exchange: String,
-  delayInSeconds: Option[Int] = None,
   groupId: String
 ) {
   require(body.length <= 256 * 1024, "message body must be less than or equal to 256 KB")
@@ -22,7 +21,7 @@ case class MessageSubscription(
   bindingKey: String,
   queue: String,
   accountId: String,
-  status: String = "active"
+  status: String
 ) {
 
   val allowedStatuses = List("active", "transitioning", "locked", "inactive")

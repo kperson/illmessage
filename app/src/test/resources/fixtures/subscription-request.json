@@ -6,7 +6,8 @@
       "exchange": "e1",
       "bindingKey": "com.*.hello",
       "queue": "q1",
-      "accountId": "782056314912"
+      "accountId": "782056314912",
+      "status": "active"
     }
   },
   "subscription-delete": {
@@ -16,7 +17,8 @@
       "exchange": "e1",
       "bindingKey": "com.*.hello",
       "queue": "q1",
-      "accountId": "782056314912"
+      "accountId": "782056314912",
+      "status": "active"
     }
   }
 }

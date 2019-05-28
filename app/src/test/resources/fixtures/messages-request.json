@@ -7,7 +7,6 @@
         "routingKey": "my-routing-key",
         "body": "My Message",
         "exchange": "Exchange One",
-        "delayInSeconds": 2,
         "groupId": "serial-one"
       },
       {

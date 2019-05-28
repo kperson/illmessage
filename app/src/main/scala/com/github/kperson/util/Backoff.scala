@@ -10,16 +10,18 @@ object Backoff {
 
   def runBackoffTask[A](
     maxAttempts: Int,
-    todos: List[A]
+    multiple: Int,
+    todos: List[A],
   )(f: List[A] => Future[List[A]])
  (implicit  ec: ExecutionContext): Future[Boolean] = {
     val p = Promise[Boolean]()
-    runBackoffTaskHelper(maxAttempts, todos, f, p, 0.seconds)
+    runBackoffTaskHelper(maxAttempts, multiple, todos, f, p, 0.seconds)
     p.future
   }
 
   private def runBackoffTaskHelper[A](
     maxAttempts: Int,
+    multiple: Int,
     todos: List[A],
     f: List[A] => Future[List[A]],
     promise: Promise[Boolean],
@@ -27,14 +29,14 @@ object Backoff {
   )(implicit  ec: ExecutionContext) {
     val rs = f(todos)
     rs.foreach {
-      case Nil if maxAttempts == 1 => promise.failure(new RuntimeException("back off job failed"))
       case Nil => promise.success(true)
+      case _ if maxAttempts == 1 => promise.failure(new RuntimeException("back off job failed"))
       case remaining =>
         val timer = new Timer()
         timer.schedule(new TimerTask {
           def run() {
-            val nextDelay = if(delay.toMillis == 0L) 1.second else (delay.toMillis * 2).microsecond
-            runBackoffTaskHelper(maxAttempts - 1, remaining, f, promise, nextDelay)
+            val nextDelay = if(delay.toMillis == 0L) 250.milliseconds else (delay.toMillis * multiple).microsecond
+            runBackoffTaskHelper(maxAttempts - 1, multiple, remaining, f, promise, nextDelay)
           }
         }, delay.toMillis)
     }

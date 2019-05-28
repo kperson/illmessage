@@ -28,7 +28,7 @@ trait WriteAheadStreamProcessor extends StreamChangeCaptureHandler {
   def handleChange(change: ChangeCapture[DynamoMap]) {
     logger.debug(s"processing change, $change")
     val item = change.map { _.flatten } match {
-      case New(_, item) => Some(read[WALRecord](write(item)))
+      case New(_, payload) => Some(read[WALRecord](write(payload)))
       case _ => None
     }
     item.foreach { record =>
@@ -37,19 +37,14 @@ trait WriteAheadStreamProcessor extends StreamChangeCaptureHandler {
   }
 
   def handleNewWALRecord(record: WALRecord): Future[Any] = {
-    logger.info(s"received new record, $record")
-    for {
-      //1. remove the record from the WAL
-      _ <- walDAO.remove(record.messageId, record.message.partitionKey)
+    logger.debug(s"received new record, $record")
+    val enqueue = for {
       allSubscriptions <- {
-        //2. if we have a pre computed subscription, fetch that, otherwise, look up all applicable subscriptions
-        record.preComputedSubscription
-          .map { preComputed => Future.successful(List(preComputed)) }
-          .getOrElse(subscriptionDAO.fetchSubscriptions(record.message.exchange, record.message.routingKey))
+          subscriptionDAO.fetchSubscriptions(record.message.exchange, record.message.routingKey)
       }
-      //3. send out the messages
-      rs <- deliveryDAO.queueMessages(allSubscriptions, record.copy(preComputedSubscription = None))
+      rs <- deliveryDAO.queueMessages(allSubscriptions, record)
     } yield rs
+    enqueue.flatMap { _ => walDAO.remove(record.messageId, record.message.partitionKey) }
   }
 }
 

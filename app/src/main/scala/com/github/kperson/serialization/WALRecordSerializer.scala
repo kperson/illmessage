@@ -1,6 +1,6 @@
 package com.github.kperson.serialization
 
-import com.github.kperson.model.{Message, MessageSubscription}
+import com.github.kperson.model.Message
 import com.github.kperson.wal.WALRecord
 
 import org.json4s.{CustomSerializer, Extraction, Formats}
@@ -13,8 +13,7 @@ class WALRecordSerializer extends CustomSerializer[WALRecord](format => (
       implicit val formats: Formats = format
       val messageId = (json \ "messageId").extract[String]
       val message = (json \ "message").extract[Message]
-      val preComputedSubscription = (json \ "preComputedSubscription").extract[Option[MessageSubscription]]
-      WALRecord(message, messageId, preComputedSubscription)
+      WALRecord(message, messageId)
   },
   {
     case record: WALRecord =>
@@ -22,7 +21,6 @@ class WALRecordSerializer extends CustomSerializer[WALRecord](format => (
         JField("messageId", JString(record.messageId)) ::
         JField("message", Extraction.decompose(record.message)(format)) ::
         JField("partitionKey", JString(record.message.partitionKey)) ::
-        JField("preComputedSubscription", Extraction.decompose(record.preComputedSubscription)(format)) ::
         Nil
       )
   }

@@ -5,6 +5,7 @@ import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.test.dynamo.DynamoSupport
 import com.github.kperson.test.spec.IllMessageSpec
 import com.github.kperson.wal.WALRecord
+
 import org.json4s.Formats
 
 
@@ -25,7 +26,7 @@ class AmazonDeliveryDAOSpec extends IllMessageSpec with DynamoSupport with TestS
       fetch
     }
 
-    val expectedValue = Some(Delivery(message, subscription, Int.MinValue + 1))
+    val expectedValue = Some(Delivery(message, subscription, Int.MinValue + 1, "inFlight"))
     whenReady(job, secondsTimeOut(3)) { rs =>
       rs should be (expectedValue)
     }
@@ -55,7 +56,6 @@ trait TestSupport {
     "my-r-key-1",
     "hello world",
     "exchange-one",
-    None,
     "group-one"
   )
 
@@ -63,7 +63,8 @@ trait TestSupport {
     "e1",
     "com.*.hello",
     "q1",
-    "782056314912"
+    "782056314912",
+    "active"
   )
 
   val record = WALRecord(

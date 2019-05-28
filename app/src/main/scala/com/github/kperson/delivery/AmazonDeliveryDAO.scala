@@ -14,30 +14,30 @@ import org.json4s.jackson.Serialization.{read, write}
 import scala.concurrent.Future
 
 
-class AmazonDeliveryDAO(client: DynamoClient, deliveryTable: String, sequenceTable: String) extends DeliveryDAO {
+class AmazonDeliveryDAO(
+  client: DynamoClient,
+  deliveryTable: String,
+  sequenceTable: String
+ ) extends DeliveryDAO {
 
   import client.ec
   implicit val formats: Formats = JSONFormats.formats
 
-  def queueMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[List[Delivery]] = {
-    val groupings = subscriptions.grouped(25).toList
-    val groupedJobs = groupings.map { queueGroupedMessages(_, record) }
-    Future.sequence(groupedJobs).map { _.flatten.toList }
-  }
+  private val startingValue = Int.MinValue.toLong
 
-  private def queueGroupedMessages(
-    subscriptions: List[MessageSubscription],
-    record: WALRecord
-  ): Future[List[Delivery]] = {
+  def queueMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[List[Delivery]] = {
     val deliveriesFut = Future.sequence(
       subscriptions.map { sub =>
-        nextSequenceId(sub.id).map { dId =>
-          Delivery(record.message, sub, dId)
+        nextSequenceId(sub.id, record.message.groupId).map { dId =>
+          //if there are no pending message for this group and subscription, allow it be sent immediately
+          //otherwise, set it to pending
+          val status = if (dId == startingValue + 1L) "inFlight" else "pending"
+          Delivery(record.message, sub, dId, status)
         }
       }
     )
     deliveriesFut.flatMap { deliveries =>
-      Backoff.runBackoffTask(5, deliveries) { items =>
+      Backoff.runBackoffTask(7, 2, deliveries) { items =>
         client.batchPutItems(deliveryTable, items).map { _.unprocessedInserts }
       }.map { _ =>
         deliveries
@@ -55,16 +55,19 @@ class AmazonDeliveryDAO(client: DynamoClient, deliveryTable: String, sequenceTab
     )
   }
 
-  private def nextSequenceId(subscriptionId: String): Future[Long] = {
+  private def nextSequenceId(subscriptionId: String, groupId: String): Future[Long] = {
     val updateExpression = "SET subscriptionCt = if_not_exists(subscriptionCt, :startValue) + :inc"
     val key = Map(
       "subscriptionId" -> Map(
-        "S" -> subscriptionId
+        "S" -> subscriptionId,
+      ),
+      "groupId" -> Map(
+        "S" -> groupId,
       )
     )
     val expressionAttributeValues = Map(
       ":startValue" -> Map(
-        "N" -> (Int.MinValue).toString
+        "N" -> startingValue
       ),
       ":inc" -> Map(
         "N" -> "1"
