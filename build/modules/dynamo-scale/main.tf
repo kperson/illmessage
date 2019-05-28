@@ -1,7 +1,6 @@
 variable "table_name" {}
 variable "table_arn" {}
 
-
 variable "namespace" {}
 
 variable "max_capacity" {

@@ -8,15 +8,6 @@ data "aws_iam_policy_document" "tasks_assume_role_policy_doc" {
       identifiers = ["lambda.amazonaws.com"]
     }
   }
-
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
 }
 
 data "aws_iam_policy_document" "tasks_role_policy_doc" {
@@ -53,6 +44,7 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "${aws_dynamodb_table.mailbox.arn}",
       "${aws_dynamodb_table.write_ahead_log.arn}",
       "${aws_dynamodb_table.subscriptions.arn}",
+      "${aws_dynamodb_table.sub_message_sequence.arn}",
     ]
   }
 
@@ -73,16 +65,6 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
 
     resources = [
       "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.namespace}_*",
-    ]
-  }
-
-  statement {
-    actions = [
-      "ecs:RunTask",
-    ]
-
-    resources = [
-      "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:task-definition/${var.namespace}_background:*",
     ]
   }
 

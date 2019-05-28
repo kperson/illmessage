@@ -4,28 +4,31 @@ import com.github.kperson.app.AppInit
 import com.github.kperson.aws.dynamo._
 import com.github.kperson.message.QueueClient
 import com.github.kperson.serialization.JSONFormats
+
 import org.json4s.Formats
 import org.json4s.jackson.Serialization.{read, write}
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
+
 
 trait DeliveryStreamProcessor extends StreamChangeCaptureHandler {
 
-
   def queueClient: QueueClient
+  def deliveryDAO: DeliveryDAO
 
   implicit val formats: Formats = JSONFormats.formats
+  implicit val ec: ExecutionContext
 
   def handleChange(change: ChangeCapture[DynamoMap]) {
-    val item = change.map { _.flatten } match {
-      case New(_, payload) =>
+    val item: Option[ChangeCapture[Delivery]] = change.map { _.flatten } match {
+      case New(eventSource, payload) =>
         val d = read[Delivery](write(payload))
-        if(d.status == "inFlight") Some(d) else None
-      case Update(_, oldItem, newItem) =>
+        Some(New(eventSource, d))
+      case Update(eventSource, oldItem, newItem) =>
         val dOld = read[Delivery](write(oldItem))
         val dNew = read[Delivery](write(newItem))
-        if(dNew.status == "inFlight" && dOld.status != "inFlight") Some(dNew) else None
+        Some(Update(eventSource, dOld, dNew))
       case _ => None
     }
     item.foreach { delivery =>
@@ -33,8 +36,22 @@ trait DeliveryStreamProcessor extends StreamChangeCaptureHandler {
     }
   }
 
-  def handleDelivery(delivery: Delivery): Future[Any] = {
-    queueClient.sendMessage(delivery)
+  def handleDelivery(change: ChangeCapture[Delivery]): Future[Any] = {
+    val inFlight = "inFlight"
+    val delivery = change match {
+      case New(_, newDelivery) if newDelivery.status == inFlight => Some(newDelivery)
+      case Update(_, oldDelivery, newDelivery) if (oldDelivery.status != inFlight && newDelivery.status == inFlight) =>
+        Some(newDelivery)
+      case _ => None
+    }
+
+    delivery match {
+      case Some(d) =>
+        queueClient.sendMessage(d).flatMap { _ =>
+          deliveryDAO.remove(d)
+        }
+      case _ => Future.successful(true)
+    }
   }
 
 }
