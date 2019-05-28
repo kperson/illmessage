@@ -49,6 +49,13 @@ class AmazonDeliveryDAOSpec extends IllMessageSpec with DynamoSupport with TestS
     }
   }
 
+  it should "ack" in withDynamo { (_, _, dynamoClient) =>
+    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")
+    whenReady(client.ack("one", "two", 4), secondsTimeOut(5)) { x =>
+      print(x)
+    }
+  }
+
 }
 
 trait TestSupport {

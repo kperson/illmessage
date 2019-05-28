@@ -9,5 +9,6 @@ trait DeliveryDAO {
 
   def queueMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[Any]
   def remove(delivery: Delivery): Future[Any]
+  def ack(subscriptionId: String, groupId: String, sequenceId: Long): Future[Any]
 
 }

@@ -89,6 +89,17 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "${aws_kinesis_firehose_delivery_stream.archive.arn}",
     ]
   }
+
+  statement {
+    actions = [
+      "sqs:SendMessage",
+      "sqs:SendMessageBatch",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
 }
 
 resource "aws_iam_policy" "tasks_policy" {
