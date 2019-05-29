@@ -7,7 +7,6 @@ variable "docker_file" {
   default = "Dockerfile"
 }
 
-
 resource "random_string" "tag" {
   length  = 15
   upper   = false

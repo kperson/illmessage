@@ -15,28 +15,27 @@ variable "handler" {
 }
 
 variable "role" {
-    type = "string"
+  type = "string"
 }
 
 variable "env" {
-    type = "map"
+  type = "map"
 }
 
 variable "runtime" {
-  type = "string"
+  type    = "string"
   default = "java8"
 }
 
 variable "memory_size" {
-  type = "string"
+  type    = "string"
   default = "512"
 }
 
 variable "timeout" {
-  type = "string"
+  type    = "string"
   default = "360"
 }
-
 
 resource "aws_lambda_function" "lambda" {
   filename         = "${var.code_filename}"

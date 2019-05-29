@@ -10,6 +10,14 @@ variable "profile" {
   default = "default"
 }
 
+variable "allowed_queues" {
+  default = "*"
+}
+
+variable "dind_mount" {
+  default = "-v /var/run/docker.sock:/var/run/docker.sock"
+}
+
 provider "aws" {
   region  = "${var.region}"
   profile = "${var.profile}"

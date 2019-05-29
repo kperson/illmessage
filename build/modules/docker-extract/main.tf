@@ -10,6 +10,10 @@ variable "tag" {
   type = "string"
 }
 
+variable "dind_mount" {
+  default = "-v /var/run/docker.sock:/var/run/docker.sock"
+}
+
 data "template_file" "build_script" {
   template = "${file("${path.module}/extract_script.tpl")}"
 
@@ -18,6 +22,7 @@ data "template_file" "build_script" {
     tag            = "${var.tag}"
     output_file    = "${var.output_file}"
     out_dir        = "${path.cwd}"
+    dind_mount     = "${var.dind_mount}"
   }
 }
 

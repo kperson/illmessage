@@ -86,7 +86,7 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
     ]
 
     resources = [
-      "*",
+      "${var.allowed_queues}",
     ]
   }
 }
