@@ -17,7 +17,7 @@ variable "dind_mount" {
 data "template_file" "build_script" {
   template = "${file("${path.module}/extract_script.tpl")}"
 
-  vars {
+  vars = {
     container_file = "${var.container_file}"
     tag            = "${var.tag}"
     output_file    = "${var.output_file}"
@@ -34,7 +34,9 @@ resource "null_resource" "docker_extract" {
   provisioner "local-exec" {
     command = "${data.template_file.build_script.rendered}"
 
-    environment {}
+    environment = {
+
+    }
   }
 }
 
@@ -42,7 +44,7 @@ data "template_file" "ouput_file" {
   depends_on = ["null_resource.docker_extract"]
   template   = "$${output_file}"
 
-  vars {
+  vars = {
     output_file = "${var.output_file}"
   }
 }

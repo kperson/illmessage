@@ -17,7 +17,7 @@ resource "random_string" "tag" {
 data "template_file" "build_script" {
   template = "${file("${path.module}/image_build_push_script.tpl")}"
 
-  vars {
+  vars = {
     tag         = "${random_string.tag.result}"
     docker_file = "${var.docker_file}"
   }
@@ -32,7 +32,9 @@ resource "null_resource" "docker_build" {
     working_dir = "${var.working_dir}"
     command     = "${data.template_file.build_script.rendered}"
 
-    environment {}
+    environment = {
+
+    }
   }
 }
 
@@ -40,7 +42,7 @@ data "template_file" "docker_tag" {
   depends_on = ["null_resource.docker_build"]
   template   = "$${output_file}"
 
-  vars {
+  vars = {
     output_file = "${random_string.tag.result}"
   }
 }
