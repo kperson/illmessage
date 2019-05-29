@@ -22,11 +22,7 @@ class WriteAheadAPISpec extends IllMessageSpec with ScalatestRouteTest {
     }
 
     request ~> api.writeAheadRoute ~> check {
-      HttpFixturesFixtures.jsonMatchesResponse[List[Map[String, String]]](
-        responseAs[String],
-        "messages-response.json",
-        "message-response"
-      ) should be (true)
+      response.status.intValue() should be (204)
     }
 
   }

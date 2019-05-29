@@ -35,6 +35,7 @@ class AmazonDeliveryDAO(
           //otherwise, set it to pending
           val status = if (dId == startingValue + 1L) inFlight else "pending"
           Delivery(record.message, sub, dId, status, record.messageId)
+
         }
       }
     )

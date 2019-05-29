@@ -31,7 +31,7 @@ trait DynamoSupport {
     val runProcess = Runtime.getRuntime().exec(runArgs)
     runProcess.waitFor()
 
-    Thread.sleep(3200)
+    Thread.sleep(3500)
 
     try {
       val endpoint = s"http://localhost:${port}"

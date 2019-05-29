@@ -38,7 +38,7 @@ trait WriteAheadAPI extends MarshallingSupport {
           entity(as[List[MessagePayload]]) { messagePayloads =>
             val messages = messagePayloads.map { _.toMessage }
             onSuccess(writeAheadDAO.write(messages)) { _ =>
-              complete((StatusCodes.OK, messages))
+              complete(StatusCodes.NoContent)
             }
           }
         }

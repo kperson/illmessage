@@ -41,6 +41,7 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "dynamodb:DeleteItem",
       "dynamodb:Scan",
       "dynamodb:Query",
+      "dynamodb:UpdateItem",
     ]
 
     resources = [
