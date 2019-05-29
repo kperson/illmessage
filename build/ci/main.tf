@@ -1,5 +1,11 @@
+resource "random_string" "state_bucket" {
+  length  = 15
+  upper   = false
+  number  = false
+  special = false
+}
 resource "aws_s3_bucket" "state_bucket" {
-  bucket = "${var.namespace}-state-storage"
+  bucket = "illmessage-state-storage-${random_string.state_bucket.result}"
 }
 
 resource "aws_codebuild_project" "codebuild" {
@@ -30,23 +36,9 @@ resource "aws_codebuild_project" "codebuild" {
 
     environment_variable {
       "name"  = "TERRAFORM_ZIP_URL"
-      "value" = "https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip"
+      "value" = "https://releases.hashicorp.com/terraform/0.12.0/terraform_0.12.0_linux_amd64.zip"
     }
 
-    environment_variable {
-      "name"  = "VPC_ID"
-      "value" = "${var.build_vpc_id}"
-    }
-
-    environment_variable {
-      "name"  = "TASK_SECURITY_GROUP"
-      "value" = "${var.build_security_group_ids[0]}"
-    }
-
-    environment_variable {
-      "name"  = "TASK_SUBNET"
-      "value" = "${var.build_subnets[0]}"
-    }
   }
 
   source {
@@ -56,9 +48,4 @@ resource "aws_codebuild_project" "codebuild" {
     buildspec       = "build/buildspec.yml"
   }
 
-  vpc_config {
-    vpc_id             = "${var.build_vpc_id}"
-    security_group_ids = ["${var.build_security_group_ids}"]
-    subnets            = ["${var.build_subnets}"]
-  }
 }

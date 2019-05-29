@@ -124,16 +124,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
   statement {
     actions = [
-      "ecs:DescribeClusters",
-    ]
-
-    resources = [
-      "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.namespace}",
-    ]
-  }
-
-  statement {
-    actions = [
       "firehose:CreateDeliveryStream",
       "firehose:DescribeDeliveryStream",
     ]
@@ -215,26 +205,7 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
     resources = ["arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:network-interface/*"]
   }
-  statement {
-    effect = "Allow"
 
-    actions = [
-      "ecr:GetAuthorizationToken",
-      "ecr:DescribeRepositories",
-      "ecr:CreateRepository",
-    ]
-
-    resources = ["*"]
-  }
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "ecr:*",
-    ]
-
-    resources = ["arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/${var.namespace}_*"]
-  }
 }
 
 resource "aws_iam_role" "codebuild" {

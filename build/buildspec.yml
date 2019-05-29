@@ -4,8 +4,6 @@ phases:
   pre_build:
     commands:
       - cd build/terraform
-      - echo 'Logging in to ECR...'
-      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
       - echo 'Installing terraform...'
       - wget -O terraform.zip $TERRAFORM_ZIP_URL
       - unzip terraform.zip
@@ -15,4 +13,4 @@ phases:
   build:
     commands:
       - ./terraform init -backend-config="profile=default" -backend-config="bucket=$BUILD_STATE_BUCKET" -backend-config="region=$AWS_DEFAULT_REGION" -backend-config="key=illmessage-build.tf"
-      - ./terraform apply -var "profile=default" -var "namespace=$NAMESPACE" -var "region=$AWS_DEFAULT_REGION" -var "vpc_id=$VPC_ID" -var "task_security_group=$TASK_SECURITY_GROUP" -var "task_subnet=$TASK_SUBNET" -auto-approve
+      - ./terraform apply -var "profile=default" -var "namespace=$NAMESPACE" -var "region=$AWS_DEFAULT_REGION" -auto-approve

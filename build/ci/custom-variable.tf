@@ -1,5 +1,4 @@
 variable "namespace" {
-  default = "illmessage"
   type    = "string"
 }
 
@@ -10,23 +9,12 @@ variable "region" {
 
 variable "profile" {
   type = "string"
+  default = "default"
 }
 
 variable "git_repo" {
   default = "https://github.com/kperson/illmessage.git"
   type    = "string"
-}
-
-variable "build_vpc_id" {
-  type = "string"
-}
-
-variable "build_subnets" {
-  type = "list"
-}
-
-variable "build_security_group_ids" {
-  type = "list"
 }
 
 provider "aws" {
