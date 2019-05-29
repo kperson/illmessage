@@ -13,60 +13,60 @@ class AmazonDeliveryDAOSpec extends IllMessageSpec with DynamoSupport with TestS
 
   implicit val formats: Formats = JSONFormats.formats
 
-//  "AmazonDeliveryDAO" should "queue messages" in withDynamo { (_, _, dynamoClient) =>
-//    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")
-//    import dynamoClient.ec
-//    val job = for {
-//      deliveries <- client.queueMessages(List(subscription), record)
-//      fetch <- dynamoClient.getItem[Delivery](
-//        "mailbox",
-//        Map("subscriptionId" -> subscription.id, "sequenceId" -> deliveries.head.sequenceId)
-//      )
-//    } yield {
-//      fetch
-//    }
-//
-//    val expectedValue = Some(Delivery(message, subscription, Int.MinValue + 1, "inFlight", record.messageId))
-//    whenReady(job, secondsTimeOut(3)) { rs =>
-//      rs should be (expectedValue)
-//    }
-//  }
-//
-//  it should "remove messages" in withDynamo { (_, _, dynamoClient) =>
-//    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")
-//    import dynamoClient.ec
-//    val job = for {
-//      deliveries <- client.queueMessages(List(subscription), record)
-//      delivery <- client.remove(deliveries.head).map { _  => deliveries.head }
-//      fetch <- dynamoClient.getItem[Delivery](
-//        "mailbox",
-//        Map("subscriptionId" -> subscription.id, "sequenceId" -> delivery.sequenceId)
-//      )
-//    } yield fetch
-//
-//    whenReady(job, secondsTimeOut(3)) { rs =>
-//      rs.isEmpty should be (true)
-//    }
-//  }
+  "AmazonDeliveryDAO" should "queue messages" in withDynamo { (_, _, dynamoClient) =>
+    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")
+    import dynamoClient.ec
+    val job = for {
+      deliveries <- client.queueMessages(List(subscription), record)
+      fetch <- dynamoClient.getItem[Delivery](
+        "mailbox",
+        Map("subscriptionId" -> subscription.id, "sequenceId" -> deliveries.head.sequenceId)
+      )
+    } yield {
+      fetch
+    }
 
-//  it should "ack and delete sequences if no more messages are present" in withDynamo { (_, _, dynamoClient) =>
-//    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")
-//    import dynamoClient.ec
-//    val delivery = Delivery(message, subscription, 3L, "inFlight", record.messageId)
-//    val add = dynamoClient.putItem(
-//      "subMessageSequence",
-//      Map("subscriptionId" -> delivery.subscription.id, "groupId" -> delivery.message.groupId, "subscriptionCt" -> 3L)
-//    )
-//
-//    val flow = add.flatMap { _ =>
-//      client.ack(delivery.subscription.id, delivery.message.groupId, 3L)
-//    }.flatMap { _ =>
-//      dynamoClient.getItem[Map[String, Any]]("subMessageSequence", Map("subscriptionId" -> delivery.subscription.id, "groupId" -> delivery.message.groupId))
-//    }
-//    whenReady(flow, secondsTimeOut(5)) { rs =>
-//      rs should be (None)
-//    }
-//  }
+    val expectedValue = Some(Delivery(message, subscription, Int.MinValue + 1, "inFlight", record.messageId))
+    whenReady(job, secondsTimeOut(3)) { rs =>
+      rs should be (expectedValue)
+    }
+  }
+
+  it should "remove messages" in withDynamo { (_, _, dynamoClient) =>
+    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")
+    import dynamoClient.ec
+    val job = for {
+      deliveries <- client.queueMessages(List(subscription), record)
+      delivery <- client.remove(deliveries.head).map { _  => deliveries.head }
+      fetch <- dynamoClient.getItem[Delivery](
+        "mailbox",
+        Map("subscriptionId" -> subscription.id, "sequenceId" -> delivery.sequenceId)
+      )
+    } yield fetch
+
+    whenReady(job, secondsTimeOut(3)) { rs =>
+      rs.isEmpty should be (true)
+    }
+  }
+
+  it should "ack and delete sequences if no more messages are present" in withDynamo { (_, _, dynamoClient) =>
+    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")
+    import dynamoClient.ec
+    val delivery = Delivery(message, subscription, 3L, "inFlight", record.messageId)
+    val add = dynamoClient.putItem(
+      "subMessageSequence",
+      Map("subscriptionId" -> delivery.subscription.id, "groupId" -> delivery.message.groupId, "subscriptionCt" -> 3L)
+    )
+
+    val flow = add.flatMap { _ =>
+      client.ack(delivery.subscription.id, delivery.message.groupId, 3L)
+    }.flatMap { _ =>
+      dynamoClient.getItem[Map[String, Any]]("subMessageSequence", Map("subscriptionId" -> delivery.subscription.id, "groupId" -> delivery.message.groupId))
+    }
+    whenReady(flow, secondsTimeOut(5)) { rs =>
+      rs should be (None)
+    }
+  }
 
   it should "ack and dequeue if more messages are present" in withDynamo { (_, _, dynamoClient) =>
     val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")

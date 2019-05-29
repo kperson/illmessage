@@ -6,13 +6,12 @@ import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.wal.WALRecord
 import com.github.kperson.util.Backoff
 import com.github.kperson.aws.AWSError
-
 import java.nio.charset.StandardCharsets
 
 import org.json4s.Formats
 import org.json4s.jackson.Serialization.{read, write}
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 
 
 class AmazonDeliveryDAO(
@@ -101,6 +100,11 @@ class AmazonDeliveryDAO(
         Future.successful(true)
       }
     }
+  }
+
+  def bulkAck(requests: List[AckRequest]): Future[Any] = {
+    val acks = requests.map { req => ack(req.subscriptionId, req.groupId, req.sequenceId) }
+    Future.sequence(acks)
   }
 
   private def dequeue(subscriptionId: String): Future[Any] = {

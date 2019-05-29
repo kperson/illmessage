@@ -1,0 +1,18 @@
+{
+  "ack-post": {
+    "method": "POST",
+    "path": "/ack",
+    "body": [
+      {
+        "subscriptionId": "my-subscription-id",
+        "groupId": "my-group-id",
+        "sequenceId": 3
+      },
+      {
+        "subscriptionId": "my-subscription-id",
+        "groupId": "my-group-id",
+        "sequenceId": 4
+      }
+    ]
+  }
+}
