@@ -71,7 +71,7 @@ resource "aws_lambda_function" "api" {
   memory_size      = "${var.memory_size}"
   timeout          = "${var.timeout}"
   publish          = true
-  source_code_hash = "${base64sha256(file(var.code_filename))}"
+  source_code_hash = "${filesha256(var.code_filename)}"
 
   environment {
     variables = "${var.env}"
