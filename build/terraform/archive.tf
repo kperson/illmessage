@@ -1,5 +1,12 @@
+resource "random_string" "bucket_suffix" {
+  length  = 15
+  upper   = false
+  number  = false
+  special = false
+}
+
 resource "aws_s3_bucket" "archive" {
-  bucket = "${var.namespace}-archive"
+  bucket = "${var.namespace}-archive-${random_string.bucket_suffix.result}"
 }
 
 data "aws_iam_policy_document" "archive_assume_role_policy" {

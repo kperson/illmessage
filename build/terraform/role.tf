@@ -18,7 +18,10 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "dynamodb:GetShardIterator",
     ]
 
-    resources = ["${aws_dynamodb_table.write_ahead_log.stream_arn}"]
+    resources = [
+      "${aws_dynamodb_table.write_ahead_log.stream_arn}",
+      "${aws_dynamodb_table.mailbox.stream_arn}",
+    ]
   }
 
   statement {

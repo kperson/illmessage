@@ -2,15 +2,19 @@ val scalaTestVersion = "3.0.5"
 val scalaMockSupportVersion = "3.6.0"
 val akkaStreamVersion = "2.5.17"
 
-
 lazy val commonSettings = Seq(
   organization := "com.github.kperson",
   version := "1.0.0",
   scalaVersion := "2.12.6",
   parallelExecution in Test := false,
-  fork := true
+  fork := true,
+  test in assembly := {},
+  assemblyMergeStrategy in assembly := {
+    case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+    case PathList("reference.conf") => MergeStrategy.concat
+    case _ => MergeStrategy.first
+  }
 )
-
 
 lazy val awsClient = (project in file("aws-client")).
   settings(commonSettings: _*).
@@ -24,14 +28,8 @@ lazy val awsClient = (project in file("aws-client")).
     "org.scala-lang.modules"  %% "scala-xml"                   % "1.1.0"
   ))
 
-
 lazy val testSupport = (project in file("test-support")).
   settings(commonSettings: _*).
-  settings(
-    resolvers ++= Seq(
-      "Dynamo DB Local" at "https://s3-us-west-2.amazonaws.com/dynamodb-local/release"
-    )
-  ).
   settings(libraryDependencies ++= Seq (
     "com.typesafe.akka"       %% "akka-http-testkit"           % "10.1.5",
     "org.scalatest"           %% "scalatest"                   % scalaTestVersion,
@@ -40,23 +38,8 @@ lazy val testSupport = (project in file("test-support")).
     "org.json4s"              %% "json4s-jackson"              % "3.6.1"
 )).dependsOn(awsClient)
 
-
-
-
 lazy val app = (project in file("app")).
   settings(commonSettings: _*).
-  settings(
-    assemblyMergeStrategy in assembly := {
-      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-      case PathList("reference.conf") => MergeStrategy.concat
-      case _ => MergeStrategy.first
-    }
-  ).
-  settings(
-    resolvers ++= Seq(
-      "Dynamo DB Local" at "https://s3-us-west-2.amazonaws.com/dynamodb-local/release"
-    )
-  ).
   settings(libraryDependencies ++= Seq (
     "com.amazonaws"           %  "aws-lambda-java-events"      % "2.2.2",
     "com.amazonaws"           %  "aws-lambda-java-core"        % "1.2.0",

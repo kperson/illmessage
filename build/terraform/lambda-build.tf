@@ -23,20 +23,15 @@ module "extract_jar" {
   dind_mount     = "${var.dind_mount}"
 }
 
-resource "aws_lambda_function" "api" {
-  filename         = "${module.extract_jar.output_file}"
-  function_name    = "${var.namespace}_api"
-  role             = "${aws_iam_role.tasks_role.arn}"
-  handler          = "com.github.kperson.api.LambdaAPI"
-  runtime          = "java8"
-  memory_size      = 512
-  timeout          = 20
-  publish          = true
-  source_code_hash = "${base64sha256(file(module.extract_jar.output_file))}"
-
-  environment {
-    variables = "${local.app_envs}"
-  }
+module "api" {
+  source        = "../modules/lambda-http-api"
+  name          = "${var.namespace}"
+  stage_name    = "prod"
+  account_id    = "${data.aws_caller_identity.current.account_id}"
+  code_filename = "${module.extract_jar.output_file}"
+  handler       = "com.github.kperson.api.LambdaAPI"
+  role          = "${aws_iam_role.tasks_role.arn}"
+  env           = "${local.app_envs}"
 }
 
 module "wal_processor" {
