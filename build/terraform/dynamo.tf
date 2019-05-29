@@ -4,8 +4,8 @@ variable "max_capacity" {
 
 resource "aws_dynamodb_table" "mailbox" {
   name           = "${var.namespace}_mailbox"
-  read_capacity  = 3
-  write_capacity = 3
+  read_capacity  = 2
+  write_capacity = 2
   hash_key       = "subscriptionId"
   range_key      = "sequenceId"
 
@@ -32,8 +32,8 @@ resource "aws_dynamodb_table" "mailbox" {
 
 resource "aws_dynamodb_table" "write_ahead_log" {
   name           = "${var.namespace}_write_ahead_log"
-  read_capacity  = 3
-  write_capacity = 3
+  read_capacity  = 2
+  write_capacity = 2
   hash_key       = "partitionKey"
   range_key      = "messageId"
 
@@ -62,8 +62,8 @@ resource "aws_dynamodb_table" "write_ahead_log" {
 
 resource "aws_dynamodb_table" "subscriptions" {
   name           = "${var.namespace}_subscriptions"
-  read_capacity  = 3
-  write_capacity = 3
+  read_capacity  = 2
+  write_capacity = 2
   hash_key       = "exchange"
   range_key      = "subscriptionId"
 
@@ -90,8 +90,8 @@ resource "aws_dynamodb_table" "subscriptions" {
 
 resource "aws_dynamodb_table" "sub_message_sequence" {
   name           = "${var.namespace}_sub_message_sequence"
-  read_capacity  = 3
-  write_capacity = 3
+  read_capacity  = 2
+  write_capacity = 2
   hash_key       = "subscriptionId"
   range_key      = "groupId"
 

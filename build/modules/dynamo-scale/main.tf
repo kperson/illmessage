@@ -58,7 +58,7 @@ resource "aws_iam_role_policy" "scale_policy" {
 
 resource "aws_appautoscaling_target" "read_target" {
   max_capacity       = "${var.max_capacity}"
-  min_capacity       = 3
+  min_capacity       = 2
   resource_id        = "table/${var.table_name}"
   role_arn           = "${aws_iam_role.scale_role.arn}"
   scalable_dimension = "dynamodb:table:ReadCapacityUnits"
@@ -85,7 +85,7 @@ resource "aws_appautoscaling_policy" "ready_polciy" {
 
 resource "aws_appautoscaling_target" "write_target" {
   max_capacity       = "${var.max_capacity}"
-  min_capacity       = 3
+  min_capacity       = 2
   resource_id        = "table/${var.table_name}"
   role_arn           = "${aws_iam_role.scale_role.arn}"
   scalable_dimension = "dynamodb:table:WriteCapacityUnits"

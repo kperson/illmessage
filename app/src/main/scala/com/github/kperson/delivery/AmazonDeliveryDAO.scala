@@ -93,9 +93,9 @@ class AmazonDeliveryDAO(
   }
 
   def ack(subscriptionId: String, groupId: String, sequenceId: Long): Future[Any] = {
-    hasNewMessages(subscriptionId, groupId, sequenceId).map { hasNew =>
+    hasNewMessages(subscriptionId, groupId, sequenceId).flatMap { hasNew =>
       if(hasNew) {
-        dequeue(subscriptionId, groupId)
+        dequeue(subscriptionId)
       }
       else {
         Future.successful(true)
@@ -103,39 +103,40 @@ class AmazonDeliveryDAO(
     }
   }
 
-
-
-  private def dequeue(subscriptionId: String, groupId: String): Future[Any] = {
-    val keyConditionExpression = "subscriptionId = :subscriptionId AND groupId: = :groupId"
-    val filterExpression = "status <> :inFlight"
+  private def dequeue(subscriptionId: String): Future[Any] = {
+    val keyConditionExpression = "subscriptionId = :subscriptionId"
+    val filterExpression = "#status <> :inFlight"
     val expressionAttributeValues = Map(
       ":subscriptionId" -> subscriptionId,
-      ":groupId" -> groupId,
       ":inFlight" -> inFlight
     )
+    val expressionAttributeNames = Map(
+      "#status" -> "status"
+    )
 
-    val p = Promise[Delivery]()
+
+    var delivery: Delivery = null
+
     Backoff.runBackoffTask(7, 2, List(true)) { _ =>
       val response = client.query[Delivery](
         deliveryTable,
         keyConditionExpression = keyConditionExpression,
         filterExpression = Some(filterExpression),
         expressionAttributeValues = expressionAttributeValues,
+        expressionAttributeNames = expressionAttributeNames,
         scanIndexForward = true,
-        limit=1
+        limit = 1
       )
       response.map { paged =>
         if(paged.results.nonEmpty) {
-          p.success(paged.results.head)
+          delivery = paged.results.head
           List.empty
         }
         else {
           List(true)
         }
       }
-    }
-
-    p.future.flatMap { delivery =>
+    }.flatMap { _ =>
       val inFlightDelivery = delivery.copy(status = inFlight)
       client.putItem(deliveryTable, inFlightDelivery)
     }
