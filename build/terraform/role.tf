@@ -70,17 +70,6 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
 
   statement {
     actions = [
-      "iam:PassRole",
-    ]
-
-    resources = [
-      "${aws_iam_role.execution.arn}",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.namespace}_tasks_role",
-    ]
-  }
-
-  statement {
-    actions = [
       "firehose:PutRecord",
       "firehose:PutRecordBatch",
     ]

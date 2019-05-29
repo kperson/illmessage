@@ -23,7 +23,8 @@ resource "aws_dynamodb_table" "mailbox" {
     enabled = true
   }
 
-  stream_enabled = true
+  stream_enabled   = true
+  stream_view_type = "NEW_AND_OLD_IMAGES"
 
   lifecycle {
     ignore_changes = ["read_capacity", "write_capacity"]
@@ -109,9 +110,7 @@ resource "aws_dynamodb_table" "sub_message_sequence" {
     enabled = true
   }
 
-  stream_enabled = true
-
-  stream_view_type = "NEW_AND_OLD_IMAGES"
+  stream_enabled = false
 
   lifecycle {
     ignore_changes = ["read_capacity", "write_capacity"]

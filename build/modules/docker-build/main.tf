@@ -7,9 +7,6 @@ variable "docker_file" {
   default = "Dockerfile"
 }
 
-variable "repo_url" {
-  type = "string"
-}
 
 resource "random_string" "tag" {
   length  = 15
@@ -22,7 +19,6 @@ data "template_file" "build_script" {
   template = "${file("${path.module}/image_build_push_script.tpl")}"
 
   vars {
-    repo        = "${var.repo_url}"
     tag         = "${random_string.tag.result}"
     docker_file = "${var.docker_file}"
   }
@@ -52,8 +48,4 @@ data "template_file" "docker_tag" {
 
 output "docker_tag" {
   value = "${data.template_file.docker_tag.rendered}"
-}
-
-output "repo_url" {
-  value = "${var.repo_url}"
 }
