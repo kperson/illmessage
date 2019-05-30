@@ -6,6 +6,7 @@ import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.aws.ecs.ECSClient
 import com.github.kperson.aws.lambda.LambdaClient
 import com.github.kperson.aws.sqs.SQSClient
+import com.github.kperson.cf.{AmazonCFRegistrationDAO, CFRegisterDAO}
 import com.github.kperson.delivery.{AmazonDeliveryDAO, DeliveryDAO}
 import com.github.kperson.message.{AmazonQueueClient, QueueClient}
 import com.github.kperson.subscription.{AmazonSubscriptionDAO, SubscriptionDAO}
@@ -26,10 +27,12 @@ trait AppInit {
   val sqsClient = new SQSClient(config.awsRegion, "NA")
   val lambdaClient = new LambdaClient(config.awsRegion)
   val ecsClient = new ECSClient(config.awsRegion)
+  val accountId = config.accountId
 
   val walDAO: WriteAheadDAO = new AmazonWriteAheadDAO(dynamoClient, config.walTable)
   val subscriptionDAO: SubscriptionDAO = new AmazonSubscriptionDAO(dynamoClient, config.subscriptionTable)
   val queueClient: QueueClient = new AmazonQueueClient(sqsClient)
+  val cfRegisterDAO: CFRegisterDAO = new AmazonCFRegistrationDAO(dynamoClient, config.cfRegistrationTable)
   val deliveryDAO: DeliveryDAO = new AmazonDeliveryDAO(
     dynamoClient,
     config.deliveryTable,

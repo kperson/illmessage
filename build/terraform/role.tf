@@ -49,6 +49,7 @@ data "aws_iam_policy_document" "tasks_role_policy_doc" {
       "${aws_dynamodb_table.write_ahead_log.arn}",
       "${aws_dynamodb_table.subscriptions.arn}",
       "${aws_dynamodb_table.sub_message_sequence.arn}",
+      "${aws_dynamodb_table.cf_registration.arn}",
     ]
   }
 

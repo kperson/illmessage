@@ -31,6 +31,29 @@ resource "aws_dynamodb_table" "mailbox" {
   }
 }
 
+resource "aws_dynamodb_table" "cf_registration" {
+  name           = "${var.namespace}_cf_registration"
+  read_capacity  = 2
+  write_capacity = 2
+  hash_key       = "physicalResourceId"
+
+  attribute {
+    name = "physicalResourceId"
+    type = "S"
+  }
+
+
+  server_side_encryption {
+    enabled = true
+  }
+
+  stream_enabled   = false
+
+  lifecycle {
+    ignore_changes = ["read_capacity", "write_capacity"]
+  }
+}
+
 resource "aws_dynamodb_table" "write_ahead_log" {
   name           = "${var.namespace}_write_ahead_log"
   read_capacity  = 2

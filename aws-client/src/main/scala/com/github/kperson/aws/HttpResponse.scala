@@ -20,18 +20,23 @@ object AWSHttp {
     def future(builder: RequestBuilder, signing: AWSSigning, timeout: FiniteDuration = 10.seconds): Future[AWSHttpResponse] = {
       val promise = Promise[AWSHttpResponse]()
       signing.headers.foreach { case (k, v) =>
-        if(k.toLowerCase != "host") {
+        if (k.toLowerCase != "host") {
           builder.setHeader(k, v)
         }
       }
-      if(!signing.payload.isEmpty) {
+      if (!signing.payload.isEmpty) {
         builder.setBody(signing.payload)
       }
       signing.encodedParams.map { case (k, v) =>
         builder.addQueryParam(k, v)
       }
       builder.setRequestTimeout(timeout.toMillis.toInt)
-      self.executeRequest(builder.build(), new AsyncHandler[Int] {
+      requestFuture(builder.build())
+    }
+
+    def requestFuture(request: Request): Future[AWSHttpResponse] = {
+      val promise = Promise[AWSHttpResponse]()
+      self.executeRequest(request, new AsyncHandler[Int] {
 
         private var response = AWSHttpResponse(-1)
 

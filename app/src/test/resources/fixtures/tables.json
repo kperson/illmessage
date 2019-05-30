@@ -118,5 +118,24 @@
       "ReadCapacityUnits": 10,
       "WriteCapacityUnits": 10
     }
+  },
+  {
+    "TableName": "cfRegistration",
+    "AttributeDefinitions": [
+      {
+        "AttributeName": "physicalResourceId",
+        "AttributeType": "S"
+      }
+    ],
+    "KeySchema": [
+      {
+        "AttributeName": "physicalResourceId",
+        "KeyType": "HASH"
+      }
+    ],
+    "ProvisionedThroughput": {
+      "ReadCapacityUnits": 10,
+      "WriteCapacityUnits": 10
+    }
   }
 ]

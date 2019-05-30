@@ -4,7 +4,9 @@ locals {
     WAL_TABLE                  = "${aws_dynamodb_table.write_ahead_log.id}"
     SUBSCRIPTION_TABLE         = "${aws_dynamodb_table.subscriptions.id}"
     SUBSCRIPTION_MESSAGE_TABLE = "${aws_dynamodb_table.sub_message_sequence.id}"
+    CF_REGISTRATION_TABLE      = "${aws_dynamodb_table.cf_registration.id}"
     REGION                     = "${var.region}"
+    ACCOUNT_ID                 = "${data.aws_caller_identity.current.account_id}"
     LOG_LEVEL                  = "INFO"
   }
 }
@@ -52,4 +54,24 @@ module "delivery_processor" {
   handler       = "com.github.kperson.delivery.DeliveryStreamProcessorImpl"
   role          = "${aws_iam_role.tasks_role.arn}"
   env           = "${local.app_envs}"
+}
+
+resource "aws_lambda_function" "cloudformation" {
+  filename         = "${module.extract_jar.output_file}"
+  function_name    = "${var.namespace}_cloudformation"
+  role             = "${aws_iam_role.tasks_role.arn}"
+  handler          = "com.github.kperson.cf.RegisterHandlerImpl"
+  runtime          = "java8"
+  memory_size      = 512
+  timeout          = 600
+  publish          = true
+  source_code_hash = "${filesha256(module.extract_jar.output_file)}"
+
+  environment {
+    variables = "${local.app_envs}"
+  }
+}
+
+output "cloudformation_service_token" {
+  value = "${aws_lambda_function.cloudformation.arn}"
 }
