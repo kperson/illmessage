@@ -29,6 +29,7 @@ trait RegisterHandler extends RequestStreamHandler {
   def handleRequest(input: InputStream, output: OutputStream, context: Context): Unit = {
     try {
       val req = Serialization.read[CFRequest](input)
+      println(s"got request: $req")
       handleRegisterRequest(req)
       .map { res =>
         Serialization.write(res)
