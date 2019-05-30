@@ -12,13 +12,10 @@ data "aws_iam_policy_document" "codebuild_assume_role_policy" {
 data "aws_iam_policy_document" "codebuild_role_policy" {
   # Custom
 
+
   statement {
     actions = [
-      "lambda:CreateFunction",
-      "lambda:CreateEventSourceMapping",
-      "lambda:GetEventSourceMapping",
-      "lambda:ListEventSourceMappings",
-      "lambda:UpdateEventSourceMapping",
+      "lambda:*",
     ]
 
     resources = [
@@ -28,21 +25,11 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
 
   statement {
     actions = [
-      "lambda:*",
-    ]
-
-    resources = [
-      "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.namespace}_*",
-    ]
-  }
-
-  statement {
-    actions = [
       "dynamodb:*",
     ]
 
     resources = [
-      "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${var.namespace}_*",
+      "*",
     ]
   }
 
@@ -52,17 +39,7 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
 
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.namespace}_*",
-    ]
-  }
-
-  statement {
-    actions = [
-      "iam:*",
-    ]
-
-    resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.namespace}_*",
+      "*",
     ]
   }
 
@@ -82,7 +59,7 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
 
     resources = [
-      "arn:aws:s3:::${var.namespace}-*",
+      "*",
     ]
   }
 
@@ -104,106 +81,32 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
 
     resources = [
-      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.namespace}:*",
-      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.namespace}",
-    ]
-  }
-
-  statement {
-    actions = [
-      "ecs:CreateCluster",
-      "ecs:RegisterTaskDefinition",
-      "ecs:DescribeTaskDefinition",
-      "ecs:DeregisterTaskDefinition",
-    ]
-
-    resources = [
       "*",
     ]
   }
 
+
   statement {
     actions = [
-      "firehose:CreateDeliveryStream",
-      "firehose:DescribeDeliveryStream",
+      "firehose:*",
     ]
 
     resources = [
       "*",
-    ]
-  }
-
-  statement {
-    actions = [
-      "firehose:DeleteDeliveryStream",
-      "firehose:UpdateDestination",
-    ]
-
-    resources = [
-      "arn:aws:firehose:${var.region}:${data.aws_caller_identity.current.account_id}:deliverystream/${var.namespace}_*",
     ]
   }
 
   # Code build
 
-  statement {
-    actions = [
-      "s3:*",
-    ]
 
-    resources = [
-      "${aws_s3_bucket.state_bucket.arn}/*",
-      "${aws_s3_bucket.state_bucket.arn}",
-    ]
-  }
   statement {
     effect = "Allow"
 
     actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-    ]
-
-    resources = [
-      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/${var.namespace}_codebuild",
-      "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/codebuild/${var.namespace}_codebuild:*",
-    ]
-  }
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "logs:DescribeLogGroups",
-    ]
-
-    resources = [
-      "*",
-    ]
-  }
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "ec2:CreateNetworkInterface",
-      "ec2:DescribeDhcpOptions",
-      "ec2:DescribeNetworkInterfaces",
-      "ec2:DeleteNetworkInterface",
-      "ec2:DescribeSubnets",
-      "ec2:DescribeSecurityGroups",
-      "ec2:DescribeVpcs",
+      "ec2:*",
     ]
 
     resources = ["*"]
-  }
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "ec2:CreateNetworkInterfacePermission",
-    ]
-
-    resources = ["arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:network-interface/*"]
   }
 
 }
