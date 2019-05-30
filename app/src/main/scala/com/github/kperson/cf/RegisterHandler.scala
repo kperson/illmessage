@@ -35,7 +35,7 @@ trait RegisterHandler extends RequestStreamHandler {
         Serialization.write(res)
       }.flatMap { json =>
         println(s"completed with: $json")
-        val builder = new RequestBuilder("POST", true)
+        val builder = new RequestBuilder("PUT", true)
         builder.setUrl(req.ResponseURL)
         builder.setBody(json)
         builder.setHeader("Content-Type", "application/json")
