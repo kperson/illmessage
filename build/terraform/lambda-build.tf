@@ -63,7 +63,7 @@ resource "aws_lambda_function" "cloudformation" {
   handler          = "com.github.kperson.cf.RegisterHandlerImpl"
   runtime          = "java8"
   memory_size      = 512
-  timeout          = 600
+  timeout          = 900
   publish          = true
   source_code_hash = "${filesha256(module.extract_jar.output_file)}"
 

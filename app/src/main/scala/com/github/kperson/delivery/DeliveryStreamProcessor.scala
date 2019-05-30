@@ -12,7 +12,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 
 
-trait DeliveryStreamProcessor extends StreamChangeCaptureHandler {
+trait DeliveryStreamProcessor extends AsyncStreamChangeCaptureHandler {
 
   def queueClient: QueueClient
   def deliveryDAO: DeliveryDAO
@@ -20,7 +20,7 @@ trait DeliveryStreamProcessor extends StreamChangeCaptureHandler {
   implicit val formats: Formats = JSONFormats.formats
   implicit val ec: ExecutionContext
 
-  def handleChange(change: ChangeCapture[DynamoMap]) {
+  def handleChange(change: ChangeCapture[DynamoMap]): Future[Any] = {
     val item: Option[ChangeCapture[Delivery]] = change.map { _.flatten } match {
       case New(eventSource, payload) =>
         val d = read[Delivery](write(payload))
@@ -31,8 +31,9 @@ trait DeliveryStreamProcessor extends StreamChangeCaptureHandler {
         Some(Update(eventSource, dOld, dNew))
       case _ => None
     }
-    item.foreach { delivery =>
-      Await.result(handleDelivery(delivery), 30.seconds)
+    item match {
+      case Some(delivery) => handleDelivery(delivery)
+      case _ => Future.successful(true)
     }
   }
 

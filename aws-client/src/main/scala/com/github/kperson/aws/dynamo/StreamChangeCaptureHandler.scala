@@ -1,13 +1,15 @@
 package com.github.kperson.aws.dynamo
 
 import com.amazonaws.services.lambda.runtime.{Context, RequestStreamHandler}
-
 import java.io.{InputStream, OutputStream}
 
 import org.json4s.{Formats, NoTypeHints}
 import org.json4s.jackson.JsonMethods._
 import org.json4s.JsonAST.{JArray, JObject, JString, JValue}
 import org.json4s.jackson.Serialization
+
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 
 
 trait StreamChangeCaptureHandler extends RequestStreamHandler {
@@ -24,6 +26,31 @@ trait StreamChangeCaptureHandler extends RequestStreamHandler {
         }
       case _ =>
     }
+    output.flush()
+    output.close()
+  }
+
+}
+
+trait AsyncStreamChangeCaptureHandler extends RequestStreamHandler {
+
+  implicit val ec: ExecutionContext
+
+  def handleChange(change: ChangeCapture[DynamoMap]): Future[Any]
+
+  def handleRequest(input: InputStream, output: OutputStream, context: Context) {
+    implicit val formats: Formats = Serialization.formats(NoTypeHints)
+
+    val f = parse(input) match {
+      case StreamChangeCapture(list) =>
+        val futures = list.map { i =>
+          handleChange(i)
+        }
+        Future.sequence(futures)
+      case _ =>
+        Future.successful(true)
+    }
+    Await.result(f, 3.minutes)
     output.flush()
     output.close()
   }

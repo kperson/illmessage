@@ -2,13 +2,14 @@ package com.github.kperson.subscription
 
 import com.github.kperson.model.MessageSubscription
 import com.github.kperson.aws.dynamo.DynamoClient
+import com.github.kperson.delivery.Delivery
 import com.github.kperson.serialization.JSONFormats
 import org.json4s.Formats
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class AmazonSubscriptionDAO(client: DynamoClient, table: String)(implicit ec: ExecutionContext) extends SubscriptionDAO {
+class AmazonSubscriptionDAO(client: DynamoClient, table: String, deliveryTable: String)(implicit ec: ExecutionContext) extends SubscriptionDAO {
 
   implicit val defaultFormats: Formats = JSONFormats.formats
 
@@ -58,8 +59,35 @@ class AmazonSubscriptionDAO(client: DynamoClient, table: String)(implicit ec: Ex
   }
 
 
+  def deleteAllDeliveries(subscriptionId: String): Future[Any] = {
+    client.query[Delivery](
+      deliveryTable,
+      "subscriptionId = :subscriptionId",
+      expressionAttributeValues = Map(
+        ":subscriptionId" -> subscriptionId
+      ),
+      consistentRead = true
+    ).flatMap { rs =>
+      if(rs.results.isEmpty) {
+        Future.successful(true)
+      }
+      else {
+        val futures = rs.results.grouped(25).toList.map { grouping =>
+          val keys = grouping.map { r => Map("subscriptionId" -> r.subscription.id, "sequenceId" -> r.sequenceId ) }
+          client.batchDeleteItems(deliveryTable, keys)
+        }
+        Future.sequence(futures).flatMap { _ =>
+          deleteAllDeliveries(subscriptionId)
+        }
+      }
+    }
+  }
+
+
   def delete(exchange: String, subscriptionId: String): Future[Option[MessageSubscription]] = {
-    client.deleteItem[MessageSubscription](table, Map("exchange" -> exchange, "subscriptionId" -> subscriptionId))
+    client.deleteItem[MessageSubscription](table, Map("exchange" -> exchange, "subscriptionId" -> subscriptionId)).flatMap { x =>
+      deleteAllDeliveries(subscriptionId).map { _ => x }
+    }
   }
 
   def save(subscription: MessageSubscription): Future[MessageSubscription] = {
