@@ -14,11 +14,7 @@ locals {
 module "docker_build" {
   source      = "../modules/docker-build"
   working_dir = "../.."
-  docker_file = "Dockerfile"
-  depends_on = [
-    "aws_iam_role_policy_attachment.tasks_base_policy"
-  ]
-  
+  docker_file = "Dockerfile"  
 }
 
 module "extract_jar" {
@@ -36,7 +32,7 @@ module "api" {
   account_id    = "${data.aws_caller_identity.current.account_id}"
   code_filename = "${module.extract_jar.output_file}"
   handler       = "com.github.kperson.api.LambdaAPI"
-  role          = "${aws_iam_role.tasks_role.arn}"
+  role          = "${data.template_file.role_completion.rendered}"
   env           = "${local.app_envs}"
 }
 
@@ -46,7 +42,7 @@ module "wal_processor" {
   function_name = "${var.namespace}_wal_processor"
   code_filename = "${module.extract_jar.output_file}"
   handler       = "com.github.kperson.wal.WriteAheadStreamProcessorImpl"
-  role          = "${aws_iam_role.tasks_role.arn}"
+  role          = "${data.template_file.role_completion.rendered}"
   env           = "${local.app_envs}"
 }
 
@@ -56,14 +52,14 @@ module "delivery_processor" {
   function_name = "${var.namespace}_delivery_processor"
   code_filename = "${module.extract_jar.output_file}"
   handler       = "com.github.kperson.delivery.DeliveryStreamProcessorImpl"
-  role          = "${aws_iam_role.tasks_role.arn}"
+  role          = "${data.template_file.role_completion.rendered}"
   env           = "${local.app_envs}"
 }
 
 resource "aws_lambda_function" "cloudformation" {
   filename         = "${module.extract_jar.output_file}"
   function_name    = "${var.namespace}_cloudformation"
-  role             = "${aws_iam_role.tasks_role.arn}"
+  role             = "${data.template_file.role_completion.rendered}"
   handler          = "com.github.kperson.cf.RegisterHandlerImpl"
   runtime          = "java8"
   memory_size      = 512

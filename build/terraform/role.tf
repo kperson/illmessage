@@ -110,3 +110,13 @@ resource "aws_iam_role_policy_attachment" "tasks_base_policy" {
   role       = "${aws_iam_role.tasks_role.name}"
   policy_arn = "${aws_iam_policy.tasks_policy.arn}"
 }
+
+#hack, we need to wait until the attachement is complete
+data "template_file" "role_completion" {
+  depends_on = ["aws_iam_role_policy_attachment.tasks_base_policy"]
+  template   = "$${arn}"
+
+  vars = {
+    arn = "${aws_iam_role.tasks_role.arn}"
+  }
+}

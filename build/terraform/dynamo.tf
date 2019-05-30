@@ -47,7 +47,7 @@ resource "aws_dynamodb_table" "cf_registration" {
     enabled = true
   }
 
-  stream_enabled   = false
+  stream_enabled = false
 
   lifecycle {
     ignore_changes = ["read_capacity", "write_capacity"]
