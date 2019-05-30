@@ -27,19 +27,25 @@ trait RegisterHandler extends RequestStreamHandler {
 
 
   def handleRequest(input: InputStream, output: OutputStream, context: Context): Unit = {
-    val req = Serialization.read[CFRequest](input)
-    handleRegisterRequest(req)
+    try {
+      val req = Serialization.read[CFRequest](input)
+      handleRegisterRequest(req)
       .map { res =>
         Serialization.write(res)
       }.map { json =>
-      val builder = new RequestBuilder("POST", true)
-      builder.setUrl(req.ResponseURL)
-      builder.setBody(json)
-      builder.setHeader("Content-Type", "application/json")
-      Dsl.asyncHttpClient().requestFuture(builder.build())
-    }.foreach { _ =>
-      output.flush()
-      output.close()
+        println(s"completed with: $json")
+        val builder = new RequestBuilder("POST", true)
+        builder.setUrl(req.ResponseURL)
+        builder.setBody(json)
+        builder.setHeader("Content-Type", "application/json")
+        Dsl.asyncHttpClient().requestFuture(builder.build())
+      }.foreach { _ =>
+        output.flush()
+        output.close()
+      }
+    }
+    catch {
+      case ex: Throwable => ex.printStackTrace()
     }
   }
 

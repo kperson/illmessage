@@ -1,0 +1,8 @@
+Resources:
+  DatabaseChangeCapture:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      Exchange: exchangeOne
+      BindingKey: db.table_one.*
+      Queue: test_queue
+      ServiceToken: arn:aws:lambda:us-east-1:193125195061:function:illmessage_cloudformation
