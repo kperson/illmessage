@@ -15,6 +15,10 @@ module "docker_build" {
   source      = "../modules/docker-build"
   working_dir = "../.."
   docker_file = "Dockerfile"
+  depends_on = [
+    "aws_iam_role_policy_attachment.tasks_base_policy"
+  ]
+  
 }
 
 module "extract_jar" {
