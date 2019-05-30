@@ -4,16 +4,15 @@ import java.io.{InputStream, OutputStream}
 import java.util.UUID
 
 import com.amazonaws.services.lambda.runtime.{Context, RequestStreamHandler}
-
 import com.github.kperson.app.AppInit
 import com.github.kperson.aws.AWSHttp._
 import com.github.kperson.subscription.SubscriptionDAO
-
 import org.asynchttpclient.{Dsl, RequestBuilder}
 import org.json4s.jackson.Serialization
 import org.json4s.{Formats, NoTypeHints}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 
 
 trait RegisterHandler extends RequestStreamHandler {
@@ -30,20 +29,22 @@ trait RegisterHandler extends RequestStreamHandler {
     try {
       val req = Serialization.read[CFRequest](input)
       println(s"got request: $req")
-      handleRegisterRequest(req)
+
+      val f = handleRegisterRequest(req)
       .map { res =>
         Serialization.write(res)
-      }.map { json =>
+      }.flatMap { json =>
         println(s"completed with: $json")
         val builder = new RequestBuilder("POST", true)
         builder.setUrl(req.ResponseURL)
         builder.setBody(json)
         builder.setHeader("Content-Type", "application/json")
         Dsl.asyncHttpClient().requestFuture(builder.build())
-      }.foreach { _ =>
-        output.flush()
-        output.close()
       }
+      Await.result(f, 15.minutes)
+      output.flush()
+      output.close()
+
     }
     catch {
       case ex: Throwable => ex.printStackTrace()
