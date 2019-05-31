@@ -1,0 +1,16 @@
+Outputs:
+  CloudformationServiceToken:
+    Description: The custom cloud formation service token for managing subscriptions
+    Value: ${service_token}
+    Export: 
+      Name: ServiceToken-${namespace}
+  APIEndpoint:
+    Description: The API endpoint to access the illMessage service
+    Value: ${api_endpoint}
+    Export: 
+      Name: ApiEndpoint-${namespace}
+  APIExecutionARN
+    Description: An ARN to use to grant permissions to the illMessage service (see https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-resource-policies-examples.html#apigateway-resource-policies-cross-account-example)
+    Value: ${api_execution_arn}
+    Export: 
+      Name: APIExecutionARN-${namespace}
