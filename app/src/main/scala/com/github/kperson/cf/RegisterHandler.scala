@@ -15,6 +15,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 
 
+//https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-custom-resources.html
 trait RegisterHandler extends RequestStreamHandler {
 
   implicit val formats: Formats = Serialization.formats(NoTypeHints)

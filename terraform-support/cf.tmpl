@@ -1,0 +1,11 @@
+Resources:
+  %{ for sub in subscriptions ~}
+  
+  ${title(sub.name)}:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      Exchange: ${sub.exchange}
+      BindingKey: ${sub.binding_key}
+      Queue: ${sub.queue}
+      ServiceToken: ${service_token}
+  %{ endfor ~}
