@@ -38,7 +38,7 @@ trait RegisterHandler extends RequestStreamHandler {
         val builder = new RequestBuilder("PUT", true)
         builder.setUrl(req.ResponseURL)
         builder.setBody(json)
-        builder.setHeader("Content-Type", "application/json")
+        builder.setHeader("Content-Type", "")
         Dsl.asyncHttpClient().requestFuture(builder.build())
       }
       Await.result(f, 15.minutes)
