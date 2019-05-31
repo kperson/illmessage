@@ -24,15 +24,28 @@ case class SNSMessage[T](id: String, receiptHandle: String, body: T, attributes:
 case class BatchFailure(code: String, message: String)
 case class BatchSendException(failures: List[BatchFailure], response: AWSHttpResponse) extends RuntimeException(new String(response.body))
 
+
+object SQSClient {
+
+  val sqsRegexURL = raw"(https://sqs.)(.+)(.amazonaws.com)/(.+)".r
+
+}
+
 class SQSClient(
   region: String,
   accountId: String,
   credentialsProvider: AWSCredentialsProvider = Credentials.defaultCredentialsProvider
 )(implicit ec: ExecutionContext) {
 
+
   private def createRequest(method: String, path: String = "", queryParams: Map[String, String]): HttpRequest = {
     val params = queryParams.map { case (k, v) => (k, Some(v)) }
     new HttpRequest(credentialsProvider.getCredentials, "sqs", region, s"https://sqs.$region.amazonaws.com", method = method, queryParams = params, path = path)
+  }
+
+  private def createURLRequest(url: String, urlRegion: String, method: String, path: String, queryParams: Map[String, String]): HttpRequest = {
+    val params = queryParams.map { case (k, v) => (k, Some(v)) }
+    new HttpRequest(credentialsProvider.getCredentials, "sqs", urlRegion, url, method = method, queryParams = params, path = path)
   }
 
   def createQueue(
@@ -90,8 +103,15 @@ class SQSClient(
       }.toList
     }
     val params = baseParams.toMap + ("Action" -> "SendMessageBatch", "Version" -> "2012-11-05")
-    createRequest("POST",  s"${messageAccountId.getOrElse(accountId)}/$queueName/", params).run()
-      .recover {
+    val req = queueName match {
+      case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
+        val url = s"${prefix}${urlRegion}${suffix}"
+        createURLRequest(url, urlRegion, "POST", path, params).run()
+      case queue =>
+        createRequest("POST",  s"${messageAccountId.getOrElse(accountId)}/$queue/", params).run()
+    }
+
+    req.recover {
         case  AWSError(resp) =>
           val xml = XML.loadString(new String(resp.body))
           val failures = (xml \\ "Error").map { e =>
@@ -121,7 +141,15 @@ class SQSClient(
     ).collect {
       case (k, Some(v)) => (k, v)
     }
-    createRequest("POST",  s"${messageAccountId.getOrElse(accountId)}/$queueName/", baseParams).run()
+
+    queueName match {
+      case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
+        val url = s"${prefix}${urlRegion}${suffix}"
+        createURLRequest(url, urlRegion, "POST", path, baseParams).run()
+      case queue =>
+        createRequest("POST",  s"${messageAccountId.getOrElse(accountId)}/$queue/", baseParams).run()
+    }
+
   }
 
   def fetchMessages (
@@ -139,7 +167,15 @@ class SQSClient(
     ).collect {
       case (k, Some(v)) => (k, v)
     }
-    createRequest("POST",  s"$accountId/$queueName/", baseParams).run(waitTime.getOrElse(1.seconds) + 3.second).map { res =>
+
+    val req = queueName match {
+      case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
+        val url = s"${prefix}${urlRegion}${suffix}"
+        createURLRequest(url, urlRegion, "POST", path, baseParams)
+      case queue =>
+        createRequest("POST",  s"$accountId/$queue/", baseParams)
+    }
+    req.run(waitTime.getOrElse(1.seconds) + 3.second).map { res =>
       val xml = XML.loadString(new String(res.body))
       (xml \\ "ReceiveMessageResult" \\ "Message").map {  m =>
         val messageId = (m \ "MessageId").text
@@ -161,14 +197,26 @@ class SQSClient(
       "ReceiptHandle" -> receiptHandle,
       "Action" -> "DeleteMessage"
     )
-    createRequest("POST",  s"$accountId/$queueName/", baseParams).run()
+    queueName match {
+      case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
+        val url = s"${prefix}${urlRegion}${suffix}"
+        createURLRequest(url, urlRegion, "POST", path, baseParams).run()
+      case queue =>
+        createRequest("POST",  s"$accountId/$queue/", baseParams).run()
+    }
   }
 
   def deleteQueue(queueName: String) {
     val baseParams = Map(
       "Action" -> "DeleteQueue"
     )
-    createRequest("POST",  s"$accountId/$queueName/", baseParams).run()
+    queueName match {
+      case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
+        val url = s"${prefix}${urlRegion}${suffix}"
+        createURLRequest(url, urlRegion, "POST", path, baseParams).run()
+      case queue =>
+        createRequest("POST",  s"$accountId/$queue/", baseParams).run()
+    }
   }
 
   def publisher(queueName: String, autoDelete: Boolean = false, backOffStrategy: Option[BackOffStrategy] = None): Publisher[SNSMessage[String]] = {
