@@ -96,9 +96,6 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     ]
   }
 
-  # Code build
-
-
   statement {
     effect = "Allow"
 
@@ -109,6 +106,15 @@ data "aws_iam_policy_document" "codebuild_role_policy" {
     resources = ["*"]
   }
 
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "cloudformation:*",
+    ]
+
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role" "codebuild" {
