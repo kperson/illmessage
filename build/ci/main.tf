@@ -1,13 +1,3 @@
-resource "random_string" "state_bucket" {
-  length  = 15
-  upper   = false
-  number  = false
-  special = false
-}
-resource "aws_s3_bucket" "state_bucket" {
-  bucket = "illmessage-state-storage-${random_string.state_bucket.result}"
-}
-
 resource "aws_codebuild_project" "codebuild" {
   name          = "${var.namespace}_codebuild"
   description   = "illMessage Build"
@@ -31,7 +21,7 @@ resource "aws_codebuild_project" "codebuild" {
 
     environment_variable {
       name  = "BUILD_STATE_BUCKET"
-      value = "${aws_s3_bucket.state_bucket.id}"
+      value = "${var.bucket_id}"
     }
 
     environment_variable {

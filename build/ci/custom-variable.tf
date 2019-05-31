@@ -22,4 +22,9 @@ provider "aws" {
   profile = "${var.profile}"
 }
 
+variable "bucket_id" {
+  
+}
+
+
 data "aws_caller_identity" "current" {}

@@ -3,11 +3,16 @@ provider "aws" {
   profile = "default"
 }
 
+variable "state_bucket" {
+  default = "com.kperson.github.state"
+}
+
+
 data "terraform_remote_state" "illmessage" {
   backend = "s3"
   config = {
     profile = "default"
-    bucket  = "illmessage-state-storage-asxdczyccuctrlw"
+    bucket  = "${var.state_bucket}"
     region  = "us-east-1"
     key     = "illmessage-build.tf"
   }

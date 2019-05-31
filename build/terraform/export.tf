@@ -11,7 +11,9 @@ output "api_execution_arn" {
   value = "${aws_api_gateway_rest_api.api.execution_arn}"
 }
 
-
+output "state_storage_bucket" {
+  value = "value"
+}
 
 resource "aws_cloudformation_stack" "subscriptions" {
     name = "OutPuts${var.namespace}"

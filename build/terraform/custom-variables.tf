@@ -18,6 +18,11 @@ variable "dind_mount" {
   default = "-v /var/run/docker.sock:/var/run/docker.sock"
 }
 
+variable "state_storage_bucket" {  
+  default = "NA"
+}
+
+
 provider "aws" {
   region  = "${var.region}"
   profile = "${var.profile}"
