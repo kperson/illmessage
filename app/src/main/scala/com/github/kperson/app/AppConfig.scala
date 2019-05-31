@@ -21,4 +21,6 @@ class AppConfig(config: Config = ConfigFactory.load().getConfig("app")) {
 
   def port: Int = config.getString("port").toInt
 
+  def apiEndpoint = config.getString("aws.api-endpoint")
+
 }

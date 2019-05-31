@@ -14,11 +14,13 @@ case class FinalDelivery(
   subscriptionId: String,
   groupId: String,
   sequenceId: Long,
-  message: String
+  message: String,
+  apiEndpoint: String
 )
 
 class AmazonQueueClient(
   sqsClient: SQSClient,
+  apiEndpoint: String
 )(implicit ec: ExecutionContext) extends QueueClient {
 
   implicit val formats: Formats = JSONFormats.formats
@@ -29,7 +31,8 @@ class AmazonQueueClient(
       delivery.subscription.id,
       delivery.message.groupId,
       delivery.sequenceId,
-      delivery.message.body
+      delivery.message.body,
+      apiEndpoint
     )
     sqsClient.sendMessage(
       delivery.subscription.queue,

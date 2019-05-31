@@ -31,7 +31,7 @@ trait AppInit {
 
   val walDAO: WriteAheadDAO = new AmazonWriteAheadDAO(dynamoClient, config.walTable)
   val subscriptionDAO: SubscriptionDAO = new AmazonSubscriptionDAO(dynamoClient, config.subscriptionTable, config.deliveryTable)
-  val queueClient: QueueClient = new AmazonQueueClient(sqsClient)
+  val queueClient: QueueClient = new AmazonQueueClient(sqsClient, config.apiEndpoint)
   val cfRegisterDAO: CFRegisterDAO = new AmazonCFRegistrationDAO(dynamoClient, config.cfRegistrationTable)
   val deliveryDAO: DeliveryDAO = new AmazonDeliveryDAO(
     dynamoClient,
