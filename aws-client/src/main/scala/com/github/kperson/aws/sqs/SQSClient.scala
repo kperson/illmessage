@@ -3,13 +3,10 @@ package com.github.kperson.aws.sqs
 import java.util.UUID
 
 import com.amazonaws.auth.AWSCredentialsProvider
-import com.github.kperson.aws.{AWSError, AWSHttpResponse, Credentials, HttpRequest}
-import org.reactivestreams.Publisher
+import com.github.kperson.aws.{AWSHttpResponse, Credentials, HttpRequest}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import scala.util.Failure
-import scala.xml.XML
 
 
 case class SNSAttribute(name: String, value: String)
@@ -103,24 +100,13 @@ class SQSClient(
       }.toList
     }
     val params = baseParams.toMap + ("Action" -> "SendMessageBatch", "Version" -> "2012-11-05")
-    val req = queueName match {
+    queueName match {
       case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
         val url = s"$prefix$urlRegion$suffix"
         createURLRequest(url, urlRegion, "POST", path, params).run()
       case queue =>
         createRequest("POST",  s"${messageAccountId.getOrElse(accountId)}/$queue/", params).run()
     }
-
-    req.recover {
-        case  AWSError(resp) =>
-          val xml = XML.loadString(new String(resp.body))
-          val failures = (xml \\ "Error").map { e =>
-            val code = (e \ "Code").text
-            val message = (e \ "Message").text
-            BatchFailure(code, message)
-          }
-          Failure(BatchSendException(failures.toList, resp))
-      }
   }
 
 
@@ -152,42 +138,42 @@ class SQSClient(
 
   }
 
-  def fetchMessages (
-    queueName: String,
-    waitTime: Option[FiniteDuration] = None,
-    visibilityTimeout: Option[FiniteDuration] = None,
-    maxNumberOfMessages: Int = 1
-  ): Future[List[SNSMessage[String]]] = {
-    val baseParams = Map(
-      "AttributeName" -> Some("All"),
-      "VisibilityTimeout" -> visibilityTimeout.map { _.toSeconds.toString },
-      "MaxNumberOfMessages" -> Some(maxNumberOfMessages.toString),
-      "Action" -> Some("ReceiveMessage"),
-      "WaitTimeSeconds" -> waitTime.map { _.toSeconds.toString }
-    ).collect {
-      case (k, Some(v)) => (k, v)
-    }
-
-    val req = queueName match {
-      case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
-        val url = s"$prefix$urlRegion$suffix"
-        createURLRequest(url, urlRegion, "POST", path, baseParams)
-      case queue =>
-        createRequest("POST",  s"$accountId/$queue/", baseParams)
-    }
-    req.run(waitTime.getOrElse(1.seconds) + 3.second).map { res =>
-      val xml = XML.loadString(new String(res.body))
-      (xml \\ "ReceiveMessageResult" \\ "Message").map {  m =>
-        val messageId = (m \ "MessageId").text
-        val body = (m \ "Body").text
-        val receiptHandle = (m \ "ReceiptHandle").text
-        val attributes = (m \\ "Attribute").map { a =>
-          SNSAttribute( (a \ "Name").text, (a \ "Value").text)
-        }
-        SNSMessage(messageId, receiptHandle, body, attributes.toList)
-      }.toList
-    }
-  }
+//  def fetchMessages (
+//    queueName: String,
+//    waitTime: Option[FiniteDuration] = None,
+//    visibilityTimeout: Option[FiniteDuration] = None,
+//    maxNumberOfMessages: Int = 1
+//  ): Future[List[SNSMessage[String]]] = {
+//    val baseParams = Map(
+//      "AttributeName" -> Some("All"),
+//      "VisibilityTimeout" -> visibilityTimeout.map { _.toSeconds.toString },
+//      "MaxNumberOfMessages" -> Some(maxNumberOfMessages.toString),
+//      "Action" -> Some("ReceiveMessage"),
+//      "WaitTimeSeconds" -> waitTime.map { _.toSeconds.toString }
+//    ).collect {
+//      case (k, Some(v)) => (k, v)
+//    }
+//
+//    val req = queueName match {
+//      case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
+//        val url = s"$prefix$urlRegion$suffix"
+//        createURLRequest(url, urlRegion, "POST", path, baseParams)
+//      case queue =>
+//        createRequest("POST",  s"$accountId/$queue/", baseParams)
+//    }
+//    req.run(waitTime.getOrElse(1.seconds) + 3.second).map { res =>
+//      val xml = XML.loadString(new String(res.body))
+//      (xml \\ "ReceiveMessageResult" \\ "Message").map {  m =>
+//        val messageId = (m \ "MessageId").text
+//        val body = (m \ "Body").text
+//        val receiptHandle = (m \ "ReceiptHandle").text
+//        val attributes = (m \\ "Attribute").map { a =>
+//          SNSAttribute( (a \ "Name").text, (a \ "Value").text)
+//        }
+//        SNSMessage(messageId, receiptHandle, body, attributes.toList)
+//      }.toList
+//    }
+//  }
 
   def deleteMessage(
     queueName: String,
@@ -217,10 +203,6 @@ class SQSClient(
       case queue =>
         createRequest("POST",  s"$accountId/$queue/", baseParams).run()
     }
-  }
-
-  def publisher(queueName: String, autoDelete: Boolean = false, backOffStrategy: Option[BackOffStrategy] = None): Publisher[SNSMessage[String]] = {
-    new SQSPublisher(this, queueName, autoDelete, backOffStrategy)
   }
 
 }

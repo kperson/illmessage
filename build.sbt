@@ -19,13 +19,12 @@ lazy val commonSettings = Seq(
 lazy val awsClient = (project in file("aws-client")).
   settings(commonSettings: _*).
   settings(libraryDependencies ++= Seq (
-    "com.amazonaws"           %  "aws-lambda-java-events"      % "2.2.2",
     "com.amazonaws"           %  "aws-java-sdk-core"           % "1.11.416",
     "com.amazonaws"           %  "aws-lambda-java-core"        % "1.2.0",
     "org.json4s"              %% "json4s-jackson"              % "3.6.1",
     "org.scala-stm"           %% "scala-stm"                   % "0.8",
-    "org.asynchttpclient"     %  "async-http-client"           % "2.5.3",
-    "org.scala-lang.modules"  %% "scala-xml"                   % "1.1.0"
+    "org.asynchttpclient"     %  "async-http-client"           % "2.5.3"//,
+//    "org.scala-lang.modules"  %% "scala-xml"                   % "1.1.0"
   ))
 
 lazy val testSupport = (project in file("test-support")).
@@ -41,10 +40,7 @@ lazy val testSupport = (project in file("test-support")).
 lazy val app = (project in file("app")).
   settings(commonSettings: _*).
   settings(libraryDependencies ++= Seq (
-    "com.amazonaws"           %  "aws-lambda-java-events"      % "2.2.2",
-    "com.amazonaws"           %  "aws-lambda-java-core"        % "1.2.0",
     "org.json4s"              %% "json4s-jackson"              % "3.6.1",
-    "org.scala-stm"           %% "scala-stm"                   % "0.8",
     "org.asynchttpclient"     %  "async-http-client"           % "2.5.3",
     "org.slf4j"               %  "slf4j-api"                   % "1.7.25",
     "io.lemonlabs"            %% "scala-uri"                   % "1.3.1",
