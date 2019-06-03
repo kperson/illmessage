@@ -8,14 +8,14 @@ import org.reactivestreams.Publisher
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import scala.util.{Failure, Try}
+import scala.util.Failure
 import scala.xml.XML
 
 
 case class SNSAttribute(name: String, value: String)
 case class SNSMessage[T](id: String, receiptHandle: String, body: T, attributes: List[SNSAttribute]) {
 
-  def map[Q](f: (T) => Q): SNSMessage[Q] = {
+  def map[Q](f: T => Q): SNSMessage[Q] = {
     SNSMessage(id, receiptHandle, f(body), attributes)
   }
 
@@ -27,7 +27,7 @@ case class BatchSendException(failures: List[BatchFailure], response: AWSHttpRes
 
 object SQSClient {
 
-  val sqsRegexURL = raw"(https://sqs.)(.+)(.amazonaws.com)/(.+)".r
+  private val sqsRegexURL = raw"(https://sqs.)(.+)(.amazonaws.com)/(.+)".r
 
 }
 
@@ -105,7 +105,7 @@ class SQSClient(
     val params = baseParams.toMap + ("Action" -> "SendMessageBatch", "Version" -> "2012-11-05")
     val req = queueName match {
       case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
-        val url = s"${prefix}${urlRegion}${suffix}"
+        val url = s"$prefix$urlRegion$suffix"
         createURLRequest(url, urlRegion, "POST", path, params).run()
       case queue =>
         createRequest("POST",  s"${messageAccountId.getOrElse(accountId)}/$queue/", params).run()
@@ -144,7 +144,7 @@ class SQSClient(
 
     queueName match {
       case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
-        val url = s"${prefix}${urlRegion}${suffix}"
+        val url = s"$prefix$urlRegion$suffix"
         createURLRequest(url, urlRegion, "POST", path, baseParams).run()
       case queue =>
         createRequest("POST",  s"${messageAccountId.getOrElse(accountId)}/$queue/", baseParams).run()
@@ -170,7 +170,7 @@ class SQSClient(
 
     val req = queueName match {
       case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
-        val url = s"${prefix}${urlRegion}${suffix}"
+        val url = s"$prefix$urlRegion$suffix"
         createURLRequest(url, urlRegion, "POST", path, baseParams)
       case queue =>
         createRequest("POST",  s"$accountId/$queue/", baseParams)
@@ -199,7 +199,7 @@ class SQSClient(
     )
     queueName match {
       case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
-        val url = s"${prefix}${urlRegion}${suffix}"
+        val url = s"$prefix$urlRegion$suffix"
         createURLRequest(url, urlRegion, "POST", path, baseParams).run()
       case queue =>
         createRequest("POST",  s"$accountId/$queue/", baseParams).run()
@@ -212,7 +212,7 @@ class SQSClient(
     )
     queueName match {
       case SQSClient.sqsRegexURL(prefix, urlRegion, suffix, path) =>
-        val url = s"${prefix}${urlRegion}${suffix}"
+        val url = s"$prefix$urlRegion$suffix"
         createURLRequest(url, urlRegion, "POST", path, baseParams).run()
       case queue =>
         createRequest("POST",  s"$accountId/$queue/", baseParams).run()
