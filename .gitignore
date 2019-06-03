@@ -25,3 +25,4 @@ target/
 .worksheet
 .DS_Store
 .env
+to-native.sh
