@@ -4,10 +4,7 @@ provider "aws" {
 }
 
 variable "state_bucket" {
-  default = "com.kperson.github.state"
 }
-
-
 data "terraform_remote_state" "illmessage" {
   backend = "s3"
   config = {
@@ -28,7 +25,7 @@ resource "aws_sqs_queue" "queue_two" {
 }
 
 module "my_subscriptions" {
-  source = "github.com/kperson/illmessage//terraform-support"
+  source = "github.com/kperson/illmessage//support/terraform"
   subscriptions = [
     {
       name        = "sub_one"

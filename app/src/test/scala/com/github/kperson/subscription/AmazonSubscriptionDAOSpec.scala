@@ -6,12 +6,13 @@ import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.test.dynamo.DynamoSupport
 import com.github.kperson.test.spec.IllMessageSpec
 import com.github.kperson.wal.WALRecord
+
 import org.json4s.Formats
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class SubscriptionDAOSpec extends IllMessageSpec with DynamoSupport with TestSupport {
+class AmazonSubscriptionDAOSpec extends IllMessageSpec with DynamoSupport with TestSupport {
 
   "SubscriptionDAO" should "register subscriptions" in withDynamo { (_, _, client) =>
     val dao = new AmazonSubscriptionDAO(client, "subscription", "mailbox")

@@ -11,7 +11,7 @@ object Backoff {
   def runBackoffTask[A](
     maxAttempts: Int,
     multiple: Int,
-    todos: List[A],
+    todos: List[A]
   )(f: List[A] => Future[List[A]])
  (implicit  ec: ExecutionContext): Future[Boolean] = {
     val p = Promise[Boolean]()

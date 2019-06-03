@@ -6,18 +6,19 @@ import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.wal.WALRecord
 import com.github.kperson.util.Backoff
 import com.github.kperson.aws.AWSError
+
 import java.nio.charset.StandardCharsets
 
 import org.json4s.Formats
 import org.json4s.jackson.Serialization.{read, write}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 
 class AmazonDeliveryDAO(
   client: DynamoClient,
-  deliveryTable: String,
-  sequenceTable: String
+  val deliveryTable: String,
+  val sequenceTable: String
  ) extends DeliveryDAO {
 
   val inFlight = "inFlight"
@@ -62,10 +63,10 @@ class AmazonDeliveryDAO(
     val updateExpression = "SET subscriptionCt = if_not_exists(subscriptionCt, :startValue) + :inc"
     val key = Map(
       "subscriptionId" -> Map(
-        "S" -> subscriptionId,
+        "S" -> subscriptionId
       ),
       "groupId" -> Map(
-        "S" -> groupId,
+        "S" -> groupId
       )
     )
     val expressionAttributeValues = Map(
@@ -151,10 +152,10 @@ class AmazonDeliveryDAO(
   private def hasNewMessages(subscriptionId: String, groupId: String, sequenceId: Long): Future[Boolean] = {
     val key = Map(
       "subscriptionId" -> Map(
-        "S" -> subscriptionId,
+        "S" -> subscriptionId
       ),
       "groupId" -> Map(
-        "S" -> groupId,
+        "S" -> groupId
       )
     )
     val expressionAttributeValues = Map(
@@ -176,6 +177,10 @@ class AmazonDeliveryDAO(
     }.recover {
       case AWSError(response) if new String(response.body).contains("ConditionalCheckFailedException") => true
     }
+  }
+
+  def markDeadLetter(delivery: Delivery, errorMessage: String): Future[Any] = {
+    client.putItem(deliveryTable, delivery.copy(status = "dead", error = Some(errorMessage)))
   }
 
 

@@ -13,5 +13,6 @@ trait DeliveryDAO {
   def remove(delivery: Delivery): Future[Any]
   def ack(subscriptionId: String, groupId: String, sequenceId: Long): Future[Any]
   def bulkAck(requests: List[AckRequest]): Future[Any]
+  def markDeadLetter(delivery: Delivery, errorMessage: String): Future[Any]
 
 }

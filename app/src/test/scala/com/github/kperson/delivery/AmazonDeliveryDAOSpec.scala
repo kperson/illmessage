@@ -49,6 +49,26 @@ class AmazonDeliveryDAOSpec extends IllMessageSpec with DynamoSupport with TestS
     }
   }
 
+  it should "mark dead letters" in withDynamo { (_, _, dynamoClient) =>
+    val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")
+    import dynamoClient.ec
+    val delivery = Delivery(message, subscription, 3L, "inFlight", record.messageId)
+
+    val job = dynamoClient.putItem(client.deliveryTable, delivery).flatMap { _ =>
+      client.markDeadLetter(delivery, "my error")
+    }.flatMap { _ =>
+      dynamoClient.getItem[Delivery](
+        client.deliveryTable,
+        Map("subscriptionId" -> delivery.subscription.id, "sequenceId" -> delivery.sequenceId)
+      )
+    }.map { _.get }
+
+    whenReady(job, secondsTimeOut(3)) { rs =>
+      rs.status should be ("dead")
+      rs.error should be (Some("my error"))
+    }
+  }
+
   it should "ack and delete sequences if no more messages are present" in withDynamo { (_, _, dynamoClient) =>
     val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")
     import dynamoClient.ec

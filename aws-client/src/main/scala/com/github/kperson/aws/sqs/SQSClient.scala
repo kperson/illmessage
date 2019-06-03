@@ -88,7 +88,7 @@ class SQSClient(
   def sendMessages(
     queueName: String,
     payloads: List[(String, Option[FiniteDuration], Option[String], Option[String])],
-    messageAccountId: Option[String] = None,
+    messageAccountId: Option[String] = None
   ): Future[Any] = {
     val uuid = UUID.randomUUID().toString.replace("-", "").take(10)
     val baseParams = (1 to payloads.length).zip(payloads).flatMap { case (index, (messageBody, duration, messageGroupId, messageDeduplicationId)) =>

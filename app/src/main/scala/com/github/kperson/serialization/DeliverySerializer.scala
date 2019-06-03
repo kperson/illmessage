@@ -14,19 +14,23 @@ class DeliverySerializer extends CustomSerializer[Delivery](format => (
       val sequenceId = (json \ "sequenceId").extract[Long]
       val status = (json \ "status").extract[String]
       val messageId = (json \ "messageId").extract[String]
-      Delivery(message, subscription, sequenceId, status, messageId)
+      val error = (json \ "error").extract[Option[String]]
+      Delivery(message, subscription, sequenceId, status, messageId, error)
   },
   {
     case delivery: Delivery =>
-      JObject(
-        JField("message", Extraction.decompose(delivery.message)(format)) ::
-        JField("subscription", Extraction.decompose(delivery.subscription)(format)) ::
-        JField("subscriptionStatus", JString(delivery.subscription.status)) ::
-        JField("subscriptionId", JString(delivery.subscription.id)) ::
-        JField("sequenceId", JLong(delivery.sequenceId)) ::
-        JField("status", JString(delivery.status)) ::
-        JField("messageId", JString(delivery.messageId)) ::
-        Nil
+      val f = List(
+        JField("message", Extraction.decompose(delivery.message)(format)),
+        JField("subscription", Extraction.decompose(delivery.subscription)(format)),
+        JField("subscriptionStatus", JString(delivery.subscription.status)),
+        JField("subscriptionId", JString(delivery.subscription.id)),
+        JField("sequenceId", JLong(delivery.sequenceId)),
+        JField("status", JString(delivery.status)),
+        JField("messageId", JString(delivery.messageId))
       )
+      JObject(delivery.error match {
+        case Some(e) =>  f ++ List(JField("error", JString(e)))
+        case _ => f
+      })
   }
 ))

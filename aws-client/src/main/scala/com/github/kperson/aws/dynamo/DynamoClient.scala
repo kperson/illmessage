@@ -22,7 +22,7 @@ case class BatchWriteResults[A](unprocessedInserts: List[A], unprocessedDeletes:
 class DynamoClient(
   region: String,
   endpointOverride: Option[String] = None,
-  credentialsProvider: AWSCredentialsProvider = Credentials.defaultCredentialsProvider,
+  credentialsProvider: AWSCredentialsProvider = Credentials.defaultCredentialsProvider
 ) (implicit val ec: ExecutionContext) {
 
   private def defaultFormats: Formats = Serialization.formats(NoTypeHints)

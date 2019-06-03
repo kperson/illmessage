@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 class AmazonCFRegistrationDAO(
   client: DynamoClient,
-  registrationTable: String,
+  registrationTable: String
 ) extends CFRegisterDAO {
 
   implicit val formats: Formats = JSONFormats.formats

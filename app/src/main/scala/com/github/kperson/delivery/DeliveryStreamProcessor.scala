@@ -50,10 +50,14 @@ trait DeliveryStreamProcessor extends AsyncStreamChangeCaptureHandler {
       case Some(d) =>
         queueClient.sendMessage(d).flatMap { _ =>
           deliveryDAO.remove(d)
+        }.recoverWith { case ex: Throwable =>
+          deliveryDAO.markDeadLetter(d, ex.getMessage)
         }
       case _ => Future.successful(true)
     }
   }
+
+
 
 }
 

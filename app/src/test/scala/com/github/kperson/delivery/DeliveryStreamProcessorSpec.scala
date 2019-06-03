@@ -48,6 +48,24 @@ class DeliveryStreamProcessorSpec extends IllMessageSpec {
     })
   }
 
+  def withErrorMocks(testDelivery: Delivery, repeat: Range)(testCode: DeliveryStreamProcessor => Any) {
+    testCode(new DeliveryStreamProcessor {
+      implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+
+      val queueClient: QueueClient = mock[QueueClient]
+      (queueClient.sendMessage _)
+        .expects(testDelivery)
+        .returning(Future.failed(new RuntimeException("my error")))
+        .repeat(repeat)
+
+      val deliveryDAO: DeliveryDAO = mock[DeliveryDAO]
+      (deliveryDAO.markDeadLetter _)
+        .expects(testDelivery, "my error")
+        .returning(Future.successful(true))
+        .repeat(repeat)
+    })
+  }
+
 
   "DeliveryStreamProcessorSpec" should "process new inFlight deliveries" in withMocks(delivery, 1 to 1) { processor =>
     val cc: ChangeCapture[Delivery] = New("SOURCE", delivery)
@@ -64,6 +82,13 @@ class DeliveryStreamProcessorSpec extends IllMessageSpec {
   }
 
   it should "process updated inFlight deliveries" in withMocks(delivery, 1 to 1) { processor =>
+    val cc: ChangeCapture[Delivery] = Update("SOURCE", pendingDelivery, delivery)
+    whenReady(processor.handleDelivery(cc), secondsTimeOut(3)) { _ =>
+      true should be (true)
+    }
+  }
+
+  it should "process handle errors as dead letters" in withErrorMocks(delivery, 1 to 1) { processor =>
     val cc: ChangeCapture[Delivery] = Update("SOURCE", pendingDelivery, delivery)
     whenReady(processor.handleDelivery(cc), secondsTimeOut(3)) { _ =>
       true should be (true)

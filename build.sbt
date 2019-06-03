@@ -1,6 +1,6 @@
 val scalaTestVersion = "3.0.5"
 val scalaMockSupportVersion = "3.6.0"
-val akkaStreamVersion = "2.5.17"
+val akkaStreamVersion = "2.5.19"
 
 lazy val commonSettings = Seq(
   organization := "com.github.kperson",
@@ -31,7 +31,7 @@ lazy val awsClient = (project in file("aws-client")).
 lazy val testSupport = (project in file("test-support")).
   settings(commonSettings: _*).
   settings(libraryDependencies ++= Seq (
-    "com.typesafe.akka"       %% "akka-http-testkit"           % "10.1.5",
+    "com.typesafe.akka"       %% "akka-http-testkit"           % "10.1.6",
     "org.scalatest"           %% "scalatest"                   % scalaTestVersion,
     "org.scalamock"           %% "scalamock-scalatest-support" % scalaMockSupportVersion,
     "com.typesafe.akka"       %% "akka-stream-testkit"         % akkaStreamVersion,
@@ -50,6 +50,6 @@ lazy val app = (project in file("app")).
     "io.lemonlabs"            %% "scala-uri"                   % "1.3.1",
     "ch.qos.logback"          %  "logback-classic"             % "1.2.3" % "runtime",
     "com.typesafe.akka"       %% "akka-stream"                 % akkaStreamVersion,
-    "com.typesafe.akka"       %% "akka-http"                   % "10.1.5"
+    "com.typesafe.akka"       %% "akka-http"                   % "10.1.6"
   ))
   .dependsOn(testSupport % "test", awsClient)
