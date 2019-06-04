@@ -1,30 +1,29 @@
 package com.github.kperson.wal
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.github.kperson.test.http.HttpFixturesFixtures
+import com.github.kperson.test.http.HttpFixtures
 import com.github.kperson.test.spec.IllMessageSpec
+import com.github.kperson.lambda._
 
 import scala.concurrent.Future
 
 
-
-
-class WriteAheadAPISpec extends IllMessageSpec with ScalatestRouteTest {
+class WriteAheadAPISpec extends IllMessageSpec {
 
   "MessageAPI" should "save messages" in {
 
-    val request = HttpFixturesFixtures.request("messages-request.json", "message-post")
+    val requestStr = HttpFixtures.request("messages-request.json", "message-post")
     val mockDAO = mock[WriteAheadDAO]
 
     (mockDAO.write _).expects(*).returning(Future.successful(List("message-id-1", "message-id-2")))
     val api = new WriteAheadAPI {
+      implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
       def writeAheadDAO: WriteAheadDAO = mockDAO
     }
 
-    request ~> api.writeAheadRoute ~> check {
-      response.status.intValue() should be (204)
+    val request = LambdaHttpRequest(POST, "/messages", Some(requestStr), isBase64Encoded = false)
+    whenReady(api.writeAheadRoute((request.httpMethod, request.path, request))) { rs =>
+      rs.statusCode should be (204)
     }
-
   }
 
 }

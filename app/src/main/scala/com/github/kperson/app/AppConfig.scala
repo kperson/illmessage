@@ -13,7 +13,7 @@ class AppConfig(config: Config = ConfigFactory.load().getConfig("app")) {
 
   def accountId: String = config.getString("aws.account-id")
 
-  def cfRegistrationTable = config.getString("aws.cf-registration-table")
+  def cfRegistrationTable: String = config.getString("aws.cf-registration-table")
 
   def subscriptionTable: String = config.getString("aws.subscription-table")
 
@@ -21,6 +21,6 @@ class AppConfig(config: Config = ConfigFactory.load().getConfig("app")) {
 
   def port: Int = config.getString("port").toInt
 
-  def apiEndpoint = config.getString("aws.api-endpoint")
+  def apiEndpoint: String = config.getString("aws.api-endpoint")
 
 }

@@ -1,38 +1,30 @@
 package com.github.kperson.subscription
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server
-import akka.http.scaladsl.server.Directives._
-
-import com.github.kperson.api.MarshallingSupport
+import com.github.kperson.lambda._
 import com.github.kperson.model.MessageSubscription
+import com.github.kperson.serialization.JSONFormats.formats
+
+import org.json4s.jackson.Serialization._
+
+import scala.concurrent.ExecutionContext
+
+import trail._
 
 
-trait SubscriptionAPI extends MarshallingSupport {
+trait SubscriptionAPI {
 
   def subscriptionDAO: SubscriptionDAO
 
-  val subscriptionRoute: server.Route = {
-    pathPrefix("subscription") {
-      pathEnd {
-        decodeRequest {
-          entity(as[MessageSubscription]) { subscription =>
-            post {
-              onSuccess(subscriptionDAO.save(subscription)) { sub =>
-                complete((StatusCodes.OK, sub))
-              }
-            }
-          }
-        }
-      } ~
-      path(Segment / "exchange" / Segment) { (subscriptionId, exchangeId) =>
-        delete {
-          onSuccess(subscriptionDAO.delete(exchangeId, subscriptionId)) { _ =>
-            complete((StatusCodes.NoContent))
-          }
-        }
+  implicit val ec: ExecutionContext
+
+
+  private val subscriptionMatch = Root / "subscription"
+  val subscriptionRoute: RequestHandler = {
+    case (POST, subscriptionMatch(_), req) =>
+      val subscription = read[MessageSubscription](req.bodyInputStream)
+      subscriptionDAO.save(subscription).map { sub =>
+        LambdaHttpResponse(200, write(sub), Map("Content-Type" -> "application/json"))
       }
-    }
   }
 
 }

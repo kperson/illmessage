@@ -1,13 +1,16 @@
 package com.github.kperson.wal
 
-import akka.http.scaladsl.server
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-
 import com.github.kperson.model.Message
-import com.github.kperson.api.MarshallingSupport
+import com.github.kperson.serialization.JSONFormats.formats
+import com.github.kperson.lambda._
+
+import org.json4s.jackson.Serialization._
 
 import java.util.UUID
+
+import scala.concurrent.ExecutionContext
+
+import trail._
 
 
 case class MessagePayload(
@@ -27,23 +30,18 @@ case class MessagePayload(
 }
 
 
-trait WriteAheadAPI extends MarshallingSupport {
+trait WriteAheadAPI {
 
   def writeAheadDAO: WriteAheadDAO
+  implicit val ec: ExecutionContext
 
-  val writeAheadRoute: server.Route = {
-    path("messages") {
-      post {
-        decodeRequest {
-          entity(as[List[MessagePayload]]) { messagePayloads =>
-            val messages = messagePayloads.map { _.toMessage }
-            onSuccess(writeAheadDAO.write(messages)) { _ =>
-              complete(StatusCodes.NoContent)
-            }
-          }
-        }
+  private val writeAheadMatch = Root / "messages"
+  val writeAheadRoute: RequestHandler = {
+    case (POST, writeAheadMatch(_), req) =>
+      val messages = read[List[MessagePayload]](req.bodyInputStream).map { _.toMessage }
+      writeAheadDAO.write(messages).map { _ =>
+        LambdaHttpResponse(204)
       }
-    }
   }
 
 }

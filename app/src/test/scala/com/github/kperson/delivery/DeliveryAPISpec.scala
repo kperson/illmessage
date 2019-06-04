@@ -1,29 +1,29 @@
 package com.github.kperson.delivery
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-
-import com.github.kperson.test.http.HttpFixturesFixtures
+import com.github.kperson.lambda.{LambdaHttpRequest, POST}
+import com.github.kperson.test.http.HttpFixtures
 import com.github.kperson.test.spec.IllMessageSpec
 
 import scala.concurrent.Future
 
 
-class DeliveryAPISpec extends IllMessageSpec with ScalatestRouteTest {
+class DeliveryAPISpec extends IllMessageSpec {
 
   "DeliveryAPI" should "ack messages" in {
 
-    val request = HttpFixturesFixtures.request("ack-request.json", "ack-post")
+    val requestStr = HttpFixtures.request("ack-request.json", "ack-post")
     val mockDAO = mock[DeliveryDAO]
 
     (mockDAO.bulkAck _).expects(*).returning(Future.successful(true))
     val api = new DeliveryAPI  {
+      implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
       def deliveryDAO: DeliveryDAO = mockDAO
     }
 
-    request ~> api.deliveryRoute ~> check {
-      response.status.intValue() should be (204)
+    val request = LambdaHttpRequest(POST, "/ack", Some(requestStr), isBase64Encoded = false)
+    whenReady(api.deliveryRoute((request.httpMethod, request.path, request))) { rs =>
+      rs.statusCode should be (204)
     }
-
   }
 
 }

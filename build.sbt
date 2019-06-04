@@ -23,29 +23,24 @@ lazy val awsClient = (project in file("aws-client")).
     "com.amazonaws"           %  "aws-lambda-java-core"        % "1.2.0",
     "org.json4s"              %% "json4s-jackson"              % "3.6.1",
     "org.scala-stm"           %% "scala-stm"                   % "0.8",
-    "org.asynchttpclient"     %  "async-http-client"           % "2.5.3"//,
-//    "org.scala-lang.modules"  %% "scala-xml"                   % "1.1.0"
+    "org.asynchttpclient"     %  "async-http-client"           % "2.5.3"
   ))
 
 lazy val testSupport = (project in file("test-support")).
   settings(commonSettings: _*).
   settings(libraryDependencies ++= Seq (
-    "com.typesafe.akka"       %% "akka-http-testkit"           % "10.1.6",
     "org.scalatest"           %% "scalatest"                   % scalaTestVersion,
     "org.scalamock"           %% "scalamock-scalatest-support" % scalaMockSupportVersion,
-    "com.typesafe.akka"       %% "akka-stream-testkit"         % akkaStreamVersion,
     "org.json4s"              %% "json4s-jackson"              % "3.6.1"
-)).dependsOn(awsClient)
+  )).dependsOn(awsClient)
 
 lazy val app = (project in file("app")).
   settings(commonSettings: _*).
   settings(libraryDependencies ++= Seq (
+    "com.typesafe"            % "config"                       % "1.3.4",
     "org.json4s"              %% "json4s-jackson"              % "3.6.1",
     "org.asynchttpclient"     %  "async-http-client"           % "2.5.3",
     "org.slf4j"               %  "slf4j-api"                   % "1.7.25",
-    "io.lemonlabs"            %% "scala-uri"                   % "1.3.1",
     "ch.qos.logback"          %  "logback-classic"             % "1.2.3" % "runtime",
-    "com.typesafe.akka"       %% "akka-stream"                 % akkaStreamVersion,
-    "com.typesafe.akka"       %% "akka-http"                   % "10.1.6"
-  ))
-  .dependsOn(testSupport % "test", awsClient)
+    "tech.sparse"             %% "trail"                       % "0.2.0"
+  )).dependsOn(testSupport % "test", awsClient)

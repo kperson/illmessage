@@ -1,30 +1,28 @@
 package com.github.kperson.delivery
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server
-import akka.http.scaladsl.server.Directives._
+import com.github.kperson.serialization.JSONFormats.formats
+import com.github.kperson.lambda._
 
-import com.github.kperson.api.MarshallingSupport
+import org.json4s.jackson.Serialization._
+
+import scala.concurrent.ExecutionContext
+
+import trail.Root
 
 
-trait DeliveryAPI extends MarshallingSupport {
+trait DeliveryAPI {
 
   def deliveryDAO: DeliveryDAO
+  implicit val ec: ExecutionContext
 
-  val deliveryRoute: server.Route = {
-    pathPrefix("ack") {
-      pathEnd {
-        decodeRequest {
-          entity(as[List[AckRequest]]) { requests =>
-            post {
-              onSuccess(deliveryDAO.bulkAck(requests)) { _ =>
-                complete(StatusCodes.NoContent)
-              }
-            }
-          }
-        }
+  private val deliveryMatch = Root / "ack"
+
+  val deliveryRoute: RequestHandler = {
+    case (POST, deliveryMatch(_), req) =>
+      val requests = read[List[AckRequest]](req.bodyInputStream)
+      deliveryDAO.bulkAck(requests).map { _ =>
+        LambdaHttpResponse(204)
       }
-    }
   }
 
 }
