@@ -1,18 +1,17 @@
 package com.github.kperson.aws
 
-import com.amazonaws.auth.AWSCredentials
+import java.net.http.{HttpClient}
 
-import org.asynchttpclient.{AsyncHttpClient, Dsl, RequestBuilder}
+import com.amazonaws.auth.AWSCredentials
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-
 import AWSHttp._
 
 
 object HttpRequest {
 
-  val httpClient: AsyncHttpClient = Dsl.asyncHttpClient()
+  private val nativeHttpClient = HttpClient.newHttpClient()
 
 }
 
@@ -33,8 +32,7 @@ class HttpRequest(
   private val finalPath = if (path.startsWith("/")) path else "/" + path
   private val finalServiceEndpoint = if (serviceEndpoint.endsWith("/")) serviceEndpoint.substring(0, serviceEndpoint.length - 1) else serviceEndpoint
 
-  private val builder = new RequestBuilder(finalMethod, true)
-  builder.setUrl(s"$serviceEndpoint${AWSSigning.uriEncode(finalPath, isParameter = false)}")
+  val url = s"$serviceEndpoint${AWSSigning.uriEncode(finalPath, isParameter = false)}"
 
   private val signing = AWSSigning(
     awsService,
@@ -50,8 +48,7 @@ class HttpRequest(
   )
 
   def run(timeout: FiniteDuration = 10.seconds): Future[AWSHttpResponse] = {
-    HttpRequest.httpClient.future(builder, signing, timeout)
+    HttpRequest.nativeHttpClient.awsRequestFuture(url, signing, timeout)
   }
-
 
 }

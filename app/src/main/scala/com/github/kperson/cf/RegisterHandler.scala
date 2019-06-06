@@ -1,13 +1,17 @@
 package com.github.kperson.cf
 
 import java.io.{InputStream, OutputStream}
+import java.net.URI
+import java.net.http.{HttpClient, HttpRequest}
+import java.net.http.HttpRequest.BodyPublishers
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 import com.amazonaws.services.lambda.runtime.{Context, RequestStreamHandler}
 import com.github.kperson.app.AppInit
 import com.github.kperson.aws.AWSHttp._
+import com.github.kperson.aws.AWSHttpResponse
 import com.github.kperson.subscription.SubscriptionDAO
-import org.asynchttpclient.{Dsl, RequestBuilder}
 import org.json4s.jackson.Serialization
 import org.json4s.{Formats, NoTypeHints}
 
@@ -26,6 +30,18 @@ trait RegisterHandler extends RequestStreamHandler {
   def cfRegisterDAO: CFRegisterDAO
 
 
+  private val client = HttpClient.newHttpClient()
+
+
+  def runRequest(method: String, url: String, body: Array[Byte] = Array.emptyByteArray, headers: Map[String, String] = Map.empty): Future[AWSHttpResponse] = {
+    val builder = HttpRequest.newBuilder(new URI(url))
+    builder.method(method, BodyPublishers.ofByteArray(body))
+    headers.foreach { case (k, v) =>
+      builder.header(k, v)
+    }
+    client.future(builder.build())
+  }
+
   def handleRequest(input: InputStream, output: OutputStream, context: Context): Unit = {
     try {
       val req = Serialization.read[CFRequest](input)
@@ -35,12 +51,7 @@ trait RegisterHandler extends RequestStreamHandler {
       .map { res =>
         Serialization.write(res)
       }.flatMap { json =>
-        println(s"completed with: $json")
-        val builder = new RequestBuilder("PUT", true)
-        builder.setUrl(req.ResponseURL)
-        builder.setBody(json)
-        builder.setHeader("Content-Type", "")
-        Dsl.asyncHttpClient().requestFuture(builder.build())
+        runRequest("PUT", req.ResponseURL, json.getBytes(StandardCharsets.UTF_8), Map("Content-Type" -> ""))
       }
       Await.result(f, 15.minutes)
       output.flush()
