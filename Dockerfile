@@ -1,4 +1,4 @@
-FROM kperson/alpine-java-8
+FROM kperson/ubuntu-java-11
 
 ADD . /code
 WORKDIR /code
