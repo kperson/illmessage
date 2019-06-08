@@ -1,81 +1,82 @@
 package com.github.kperson.aws
 
-import io.netty.handler.codec.http.HttpHeaders
-
-import org.asynchttpclient._
+import java.net.URI
+import java.net.http.HttpRequest.BodyPublishers
+import java.net.http.HttpResponse.BodyHandlers
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration._
 
-case class AWSHttpResponse(status: Int, headers: Map[String, String] = Map.empty, body: Array[Byte] = Array.empty)
+
+case class AWSHttpResponse(status: Int, headers: Map[String, String] = Map.empty, body: Array[Byte] = Array.empty) {
+
+  lazy val lowerHeaders: Map[String, String] = headers.map { case (k, v) => (k.toLowerCase, v) }
+
+}
 
 case class AWSError(response: AWSHttpResponse) extends RuntimeException(new String(response.body))
 
 object AWSHttp {
 
-  implicit class HttpClientExtension(self: AsyncHttpClient) {
+  implicit class NativeHttpResponseExtension(self: java.net.http.HttpResponse[Array[Byte]]) {
 
-    def future(builder: RequestBuilder, signing: AWSSigning, timeout: FiniteDuration = 10.seconds): Future[AWSHttpResponse] = {
-      val promise = Promise[AWSHttpResponse]()
+    def toAWSResponse: AWSHttpResponse = {
+      AWSHttpResponse(
+        self.statusCode,
+        self.headers().map().asScala.map { case (k, v) =>
+          (k, v.get(0))
+        }.toMap,
+        self.body()
+      )
+    }
+
+  }
+
+  implicit class NativeHttpClientExtension(self: java.net.http.HttpClient) {
+
+    def future(request: java.net.http.HttpRequest): Future[AWSHttpResponse] = {
+      val p = Promise[AWSHttpResponse]()
+      self.sendAsync(request, BodyHandlers.ofByteArray()).thenAccept((rs) => {
+        if (rs.statusCode() < 400) {
+          p.success(rs.toAWSResponse)
+        }
+        else {
+          p.failure(AWSError(rs.toAWSResponse))
+        }
+      }).whenComplete { (_, error) =>
+        if(error != null) {
+          p.failure(error)
+        }
+      }
+      p.future
+    }
+
+    def awsRequestFuture(url: String, signing: AWSSigning, timeout: FiniteDuration = 10.seconds): Future[AWSHttpResponse] = {
+      val finalURL = if(signing.encodedParams.nonEmpty) {
+        val p = signing.encodedParams.toList.map { case (k, v) =>
+          s"$k=$v"
+        }.mkString("&")
+        s"$url?$p"
+      }
+      else {
+        url
+      }
+      val builder = java.net.http.HttpRequest.newBuilder(new URI(finalURL))
+
       signing.headers.foreach { case (k, v) =>
         if (k.toLowerCase != "host") {
           builder.setHeader(k, v)
         }
       }
       if (!signing.payload.isEmpty) {
-        builder.setBody(signing.payload)
+        builder.method(signing.httpMethod, BodyPublishers.ofByteArray(signing.payload))
       }
-      signing.encodedParams.map { case (k, v) =>
-        builder.addQueryParam(k, v)
-      }
-      builder.setRequestTimeout(timeout.toMillis.toInt)
-      requestFuture(builder.build())
+      builder.timeout(java.time.Duration.ofMillis(timeout.toMillis))
+      future(builder.build())
     }
 
-    def requestFuture(request: Request): Future[AWSHttpResponse] = {
-      val promise = Promise[AWSHttpResponse]()
-      self.executeRequest(request, new AsyncHandler[Int] {
-
-        private var response = AWSHttpResponse(-1)
-
-        def onStatusReceived(responseStatus: HttpResponseStatus): AsyncHandler.State =  {
-          response = response.copy(status = responseStatus.getStatusCode)
-          AsyncHandler.State.CONTINUE
-        }
-
-        def onHeadersReceived(onHeadersReceived: HttpHeaders): AsyncHandler.State =  {
-          val headers: Map[String, String] = onHeadersReceived.entries()
-            .asScala
-            .map { x => (x.getKey, x.getValue)
-            }.toMap
-          response = response.copy(headers = headers)
-          AsyncHandler.State.CONTINUE
-        }
-
-        def onBodyPartReceived(onHeadersReceived: HttpResponseBodyPart): AsyncHandler.State = {
-          response = response.copy(body = response.body ++ onHeadersReceived.getBodyPartBytes)
-          AsyncHandler.State.CONTINUE
-        }
-
-        def onCompleted(): Int = {
-          if(response.status < 400) {
-            promise.trySuccess(response)
-          }
-          else {
-            promise.tryFailure(AWSError(response))
-          }
-          response.status
-        }
-
-        def onThrowable(t: Throwable) {
-          promise.tryFailure(t)
-        }
-
-      })
-      promise.future
-    }
   }
 
 }

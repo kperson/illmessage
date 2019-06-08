@@ -5,7 +5,7 @@ val akkaStreamVersion = "2.5.19"
 lazy val commonSettings = Seq(
   organization := "com.github.kperson",
   version := "1.0.0",
-  scalaVersion := "2.12.6",
+  scalaVersion := "2.12.8",
   parallelExecution in Test := false,
   fork := true,
   test in assembly := {},
@@ -22,8 +22,7 @@ lazy val awsClient = (project in file("aws-client")).
     "com.amazonaws"           %  "aws-java-sdk-core"           % "1.11.416",
     "com.amazonaws"           %  "aws-lambda-java-core"        % "1.2.0",
     "org.json4s"              %% "json4s-jackson"              % "3.6.1",
-    "org.scala-stm"           %% "scala-stm"                   % "0.8",
-    "org.asynchttpclient"     %  "async-http-client"           % "2.5.3"
+    "org.scala-stm"           %% "scala-stm"                   % "0.8"
   ))
 
 lazy val testSupport = (project in file("test-support")).
@@ -39,7 +38,6 @@ lazy val app = (project in file("app")).
   settings(libraryDependencies ++= Seq (
     "com.typesafe"            % "config"                       % "1.3.4",
     "org.json4s"              %% "json4s-jackson"              % "3.6.1",
-    "org.asynchttpclient"     %  "async-http-client"           % "2.5.3",
     "org.slf4j"               %  "slf4j-api"                   % "1.7.25",
     "ch.qos.logback"          %  "logback-classic"             % "1.2.3" % "runtime",
     "tech.sparse"             %% "trail"                       % "0.2.0"
