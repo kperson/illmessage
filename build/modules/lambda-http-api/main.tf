@@ -18,6 +18,11 @@ variable "code_filename" {
   type = "string"
 }
 
+variable "source_code_hash" {
+  type = "source_code_hash"
+}
+
+
 variable "handler" {
   type = "string"
 }
@@ -78,7 +83,7 @@ resource "aws_lambda_function" "api" {
   timeout          = "${var.timeout}"
   layers           = "${var.layers}"
   publish          = true
-  source_code_hash = "${filesha256(var.code_filename)}"
+  source_code_hash = "${var.source_code_hash}"
 
   environment {
     variables = "${var.env}"
