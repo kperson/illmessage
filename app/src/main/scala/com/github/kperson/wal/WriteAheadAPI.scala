@@ -36,6 +36,8 @@ trait WriteAheadAPI {
   implicit val ec: ExecutionContext
 
   private val writeAheadMatch = Root / "messages"
+
+
   val writeAheadRoute: RequestHandler = {
     case (POST, writeAheadMatch(_), req) =>
       val messages = read[List[MessagePayload]](req.bodyInputStream).map { _.toMessage }

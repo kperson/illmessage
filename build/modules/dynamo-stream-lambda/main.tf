@@ -27,6 +27,12 @@ variable "runtime" {
   default = "java8"
 }
 
+variable "layers" {
+  default = [
+
+  ]
+}
+
 variable "memory_size" {
   type    = "string"
   default = "512"
@@ -47,6 +53,8 @@ resource "aws_lambda_function" "lambda" {
   timeout          = "${var.timeout}"
   publish          = true
   source_code_hash = "${filesha256(var.code_filename)}"
+
+  layers = ["${var.layers}"]
 
   environment {
     variables = "${var.env}"

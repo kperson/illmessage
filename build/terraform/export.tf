@@ -16,6 +16,6 @@ output "state_storage_bucket" {
 }
 
 resource "aws_cloudformation_stack" "subscriptions" {
-    name = "OutPuts${var.namespace}"
-    template_body = "${templatefile("export.tmpl", { service_token = aws_lambda_function.cloudformation.arn, api_endpoint = "https://${aws_api_gateway_rest_api.api.id}.execute-api.${var.region}.amazonaws.com/illmessage", api_execution_arn = aws_api_gateway_rest_api.api.execution_arn, namespace = var.namespace })}"
+  name          = "OutPuts${var.namespace}"
+  template_body = "${templatefile("export.tmpl", { service_token = aws_lambda_function.cloudformation.arn, api_endpoint = "https://${aws_api_gateway_rest_api.api.id}.execute-api.${var.region}.amazonaws.com/illmessage", api_execution_arn = aws_api_gateway_rest_api.api.execution_arn, namespace = var.namespace })}"
 }

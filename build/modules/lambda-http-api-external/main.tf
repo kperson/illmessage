@@ -107,7 +107,6 @@ resource "aws_lambda_permission" "api" {
 }
 
 resource "aws_api_gateway_deployment" "api" {
-  depends_on  = ["aws_api_gateway_integration.api"]
-  rest_api_id = "${var.api_id}"
+T  rest_api_id = "${var.api_id}"
   stage_name  = "${var.stage_name}"
 }

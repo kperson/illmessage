@@ -18,7 +18,7 @@ variable "dind_mount" {
   default = "-v /var/run/docker.sock:/var/run/docker.sock"
 }
 
-variable "state_storage_bucket" {  
+variable "state_storage_bucket" {
   default = "NA"
 }
 
