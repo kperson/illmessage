@@ -36,6 +36,13 @@ variable "runtime" {
   default = "java8"
 }
 
+variable "layers" {
+  default = [
+
+  ]
+}
+
+
 variable "memory_size" {
   type    = "string"
   default = "512"
@@ -66,6 +73,7 @@ resource "aws_lambda_function" "api" {
   role             = "${var.role}"
   handler          = "${var.handler}"
   runtime          = "${var.runtime}"
+  layers           = "${var.layers}"
   memory_size      = "${var.memory_size}"
   timeout          = "${var.timeout}"
   publish          = true
