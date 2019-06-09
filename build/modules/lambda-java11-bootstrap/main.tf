@@ -42,15 +42,6 @@ data "archive_file" "zip" {
   output_path = "${random_string.tag.result}.zip"
 }
 
-data "template_file" "docker_tag" {
-  depends_on = ["archive_file.zip"]
-  template   = "$${out}"
-
-  vars = {
-    out = "${random_string.tag.result}.zip"
-  }
-}
-
 output "zip_file" {
   value = "${random_string.tag.result}.zip"
 }
