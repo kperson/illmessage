@@ -1,4 +1,4 @@
 #!/bin/sh
 
-ls /opt
+ls /opt/java-dist
 ./opt/java-dist/bin/java -jar ${jar_file}
