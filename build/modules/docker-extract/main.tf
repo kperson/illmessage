@@ -2,8 +2,19 @@ variable "container_file" {
   type = "string"
 }
 
-variable "output_file" {
+variable "output_extension" {
   type = "string"
+}
+
+
+resource "random_string" "output_file" {
+  length  = 15
+  upper   = false
+  number  = false
+  special = false
+  keepers = {
+    time = "${timestamp()}"
+  }
 }
 
 variable "tag" {
@@ -20,7 +31,7 @@ data "template_file" "build_script" {
   vars = {
     container_file = "${var.container_file}"
     tag            = "${var.tag}"
-    output_file    = "${var.output_file}"
+    output_file    = "${random_string.output_file.result}.${var.output_extension}"
     out_dir        = "${path.cwd}"
     dind_mount     = "${var.dind_mount}"
   }
@@ -45,7 +56,8 @@ data "template_file" "ouput_file" {
   template   = "$${output_file}"
 
   vars = {
-    output_file = "${var.output_file}"
+    output_file = "${random_string.output_file.result}.${var.output_extension}"
+
   }
 }
 

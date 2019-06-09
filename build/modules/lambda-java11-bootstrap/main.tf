@@ -7,6 +7,9 @@ resource "random_string" "tag" {
   upper   = false
   number  = false
   special = false
+  keepers = {
+    time = "${timestamp()}"
+  }
 }
 
 data "template_file" "bootstap_script" {
