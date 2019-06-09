@@ -93,7 +93,7 @@ resource "aws_lambda_function" "cloudformation" {
   memory_size      = 512
   timeout          = 900
   publish          = true
-  source_code_hash = "${filesha256(module.zip_file.output_file)}"
+  source_code_hash = "${filesha256(module.bootstrap.zip_file)}"
 
   environment {
     variables = "${local.app_envs}"
