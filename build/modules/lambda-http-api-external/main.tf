@@ -107,6 +107,6 @@ resource "aws_lambda_permission" "api" {
 }
 
 resource "aws_api_gateway_deployment" "api" {
-T  rest_api_id = "${var.api_id}"
+  rest_api_id = "${var.api_id}"
   stage_name  = "${var.stage_name}"
 }
