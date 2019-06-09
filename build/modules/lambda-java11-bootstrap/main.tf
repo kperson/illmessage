@@ -56,5 +56,5 @@ output "zip_file" {
 }
 
 output "zip_file_hash" {
-  value = "${archive_file.zip.output_base64sha256}"
+  value = "${data.archive_file.zip.output_base64sha256}"
 }
