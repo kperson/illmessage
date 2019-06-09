@@ -1,29 +1,29 @@
 variable "name" {
-    type = "string"
+  type = "string"
 }
 
 variable "region" {
-    type = "string"
-    default="us-east-1"
+  type    = "string"
+  default = "us-east-1"
 }
 
 variable "stage_name" {
-    type = "string"
+  type = "string"
 }
 
 variable "account_id" {
-    type = "string"
+  type = "string"
 }
 variable "code_filename" {
-    type = "string"
+  type = "string"
 }
 
 variable "handler" {
-    type = "string"
+  type = "string"
 }
 
 variable "role" {
-    type = "string"
+  type = "string"
 }
 
 
@@ -44,6 +44,12 @@ variable "memory_size" {
 variable "timeout" {
   type    = "string"
   default = "30"
+}
+
+variable "layers" {
+  default = [
+
+  ]
 }
 
 
@@ -70,6 +76,7 @@ resource "aws_lambda_function" "api" {
   runtime          = "${var.runtime}"
   memory_size      = "${var.memory_size}"
   timeout          = "${var.timeout}"
+  layers           = "${var.layers}"
   publish          = true
   source_code_hash = "${filesha256(var.code_filename)}"
 
