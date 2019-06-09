@@ -52,7 +52,7 @@ module "api" {
   role                 = "${data.template_file.role_completion.rendered}"
   env                  = "${local.app_envs}"
   runtime              = "provided"
-  layers               = ["${local.layers}"]
+  layers               = "${local.layers}"
   api_id               = "${aws_api_gateway_rest_api.api.id}"
   api_root_resource_id = "${aws_api_gateway_rest_api.api.root_resource_id}"
 }
@@ -66,7 +66,7 @@ module "wal_processor" {
   role          = "${data.template_file.role_completion.rendered}"
   env           = "${local.app_envs}"
   runtime       = "provided"
-  layers        = ["${local.layers}"]
+  layers        = "${local.layers}"
 
 }
 
