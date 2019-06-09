@@ -23,7 +23,9 @@ object  Main {
 
   private val handlers: Map[String, RequestStreamHandler] = Map(
     "com.github.kperson.api.TestHandler" -> new TestHandler(),
-    "com.github.kperson.cf.RegisterHandlerImpl" -> RegisterHandlerImpl()
+    "com.github.kperson.cf.RegisterHandlerImpl" -> new com.github.kperson.cf.RegisterHandlerImpl(),
+    "com.github.kperson.delivery.DeliveryStreamProcessorImpl" -> new com.github.kperson.delivery.DeliveryStreamProcessorImpl(),
+    "com.github.kperson.wal.WriteAheadStreamProcessorImpl" -> new com.github.kperson.wal.WriteAheadStreamProcessorImpl()
   )
 
   def main(args: Array[String]) {
