@@ -31,7 +31,7 @@ resource "null_resource" "prepare_content" {
   }
 
   provisioner "local-exec" {
-    command = "chmod +x bootstrap && mkdir -p && ${random_string.tag.result} && cp bootstrap ${random_string.tag.result}/ && cp ${var.jar_file} ${random_string.tag.result}/"
+    command = "chmod +x bootstrap && mkdir -p ${random_string.tag.result} && cp bootstrap ${random_string.tag.result}/ && cp ${var.jar_file} ${random_string.tag.result}/"
   }
 }
 
