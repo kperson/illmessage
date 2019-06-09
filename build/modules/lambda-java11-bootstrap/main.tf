@@ -24,34 +24,26 @@ resource "local_file" "bootstrap" {
   filename = "bootstrap"
 }
 
-resource "null_resource" "zip" {
+resource "null_resource" "prepare_content" {
+  depends_on = ["local_file.bootstrap"]
   triggers = {
     time = "${timestamp()}"
   }
 
   provisioner "local-exec" {
-    command = "chmod +x bootstrap && zip ${random_string.tag.result}.zip bootstrap ${var.jar_file} && ls && while [ ! -f ${random_string.tag.result}.zip ]; do sleep 1; done"
+    command = "chmod +x bootstrap && mkdir -p && ${random_string.tag.result} && cp bootstrap ${random_string.tag.result}/ && cp ${var.jar_file} ${random_string.tag.result}/"
   }
 }
 
-
-# data "archive_file" "dotfiles" {
-#   type        = "zip"
-#   output_path = "${random_string.tag.result}.zip"
-
-#   source {
-#     content  = "${data.template_file.vimrc.rendered}"
-#     filename = ".vimrc"
-#   }
-
-#   source {
-#     content  = "${data.template_file.ssh_config.rendered}"
-#     filename = ".ssh/config"
-#   }
-# }
+data "archive_file" "zip" {
+  depends_on  = ["null_resource.prepare_content"]
+  type        = "zip"
+  source_dir  = "${random_string.tag.result}"
+  output_path = "${random_string.tag.result}.zip"
+}
 
 data "template_file" "docker_tag" {
-  depends_on = ["null_resource.zip"]
+  depends_on = ["archive_file.zip"]
   template   = "$${out}"
 
   vars = {
@@ -61,4 +53,8 @@ data "template_file" "docker_tag" {
 
 output "zip_file" {
   value = "${random_string.tag.result}.zip"
+}
+
+output "zip_file_hash" {
+  value = "${archive_file.zip.output_base64sha256}"
 }
