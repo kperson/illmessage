@@ -27,7 +27,7 @@ resource "null_resource" "zip" {
   }
 
   provisioner "local-exec" {
-    command = "chmod +x bootstrap && zip ${random_string.tag.result}.zip bootstrap ${var.jar_file}"
+    command = "chmod +x bootstrap && zip ${random_string.tag.result}.zip bootstrap ${var.jar_file} && sleep 5"
   }
 }
 
