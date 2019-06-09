@@ -25,7 +25,8 @@ object  Main {
     "com.github.kperson.api.TestHandler" -> new TestHandler(),
     "com.github.kperson.cf.RegisterHandlerImpl" -> new com.github.kperson.cf.RegisterHandlerImpl(),
     "com.github.kperson.delivery.DeliveryStreamProcessorImpl" -> new com.github.kperson.delivery.DeliveryStreamProcessorImpl(),
-    "com.github.kperson.wal.WriteAheadStreamProcessorImpl" -> new com.github.kperson.wal.WriteAheadStreamProcessorImpl()
+    "com.github.kperson.wal.WriteAheadStreamProcessorImpl" -> new com.github.kperson.wal.WriteAheadStreamProcessorImpl(),
+    "com.github.kperson.api.LambdaAPI" -> new com.github.kperson.api.LambdaAPI()
   )
 
   def main(args: Array[String]) {
