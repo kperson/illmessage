@@ -22,7 +22,8 @@ object  Main {
   private val client = HttpClient.newHttpClient()
 
   private val handlers: Map[String, RequestStreamHandler] = Map(
-    "com.github.kperson.api.TestHandler" -> new TestHandler()
+    "com.github.kperson.api.TestHandler" -> new TestHandler(),
+    "com.github.kperson.cf.RegisterHandlerImpl" -> RegisterHandlerImpl()
   )
 
   def main(args: Array[String]) {

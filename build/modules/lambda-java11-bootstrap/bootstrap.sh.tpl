@@ -1,4 +1,4 @@
 #!/bin/sh
 
-ls /opt/java-dist/bin
+printenv
 /opt/java-dist/bin/java -jar ${jar_file}
