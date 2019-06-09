@@ -35,20 +35,20 @@ resource "null_resource" "zip" {
 }
 
 
-data "archive_file" "dotfiles" {
-  type        = "zip"
-  output_path = "${random_string.tag.result}.zip"
+# data "archive_file" "dotfiles" {
+#   type        = "zip"
+#   output_path = "${random_string.tag.result}.zip"
 
-  source {
-    content  = "${data.template_file.vimrc.rendered}"
-    filename = ".vimrc"
-  }
+#   source {
+#     content  = "${data.template_file.vimrc.rendered}"
+#     filename = ".vimrc"
+#   }
 
-  source {
-    content  = "${data.template_file.ssh_config.rendered}"
-    filename = ".ssh/config"
-  }
-}
+#   source {
+#     content  = "${data.template_file.ssh_config.rendered}"
+#     filename = ".ssh/config"
+#   }
+# }
 
 data "template_file" "docker_tag" {
   depends_on = ["null_resource.zip"]
