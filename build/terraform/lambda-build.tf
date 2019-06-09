@@ -79,7 +79,7 @@ module "delivery_processor" {
   role          = "${data.template_file.role_completion.rendered}"
   env           = "${local.app_envs}"
   runtime       = "provided"
-  layers        = ["${local.layers}"]
+  layers        = "${local.layers}"
 
 }
 
@@ -89,7 +89,7 @@ resource "aws_lambda_function" "cloudformation" {
   role             = "${data.template_file.role_completion.rendered}"
   handler          = "com.github.kperson.cf.RegisterHandlerImpl"
   runtime          = "provided"
-  layers           = ["${local.layers}"]
+  layers           = "${local.layers}"
   memory_size      = 512
   timeout          = 900
   publish          = true
