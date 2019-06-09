@@ -53,8 +53,7 @@ resource "aws_lambda_function" "lambda" {
   timeout          = "${var.timeout}"
   publish          = true
   source_code_hash = "${filesha256(var.code_filename)}"
-
-  layers = ["${var.layers}"]
+  layers           = "${var.layers}"
 
   environment {
     variables = "${var.env}"
