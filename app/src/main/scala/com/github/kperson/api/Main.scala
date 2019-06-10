@@ -21,25 +21,17 @@ object  Main {
 
   private val client = HttpClient.newHttpClient()
 
-  private val handlers: Map[String, RequestStreamHandler] = Map(
-    "com.github.kperson.api.TestHandler" -> new TestHandler(),
-    "com.github.kperson.cf.RegisterHandlerImpl" -> new com.github.kperson.cf.RegisterHandlerImpl(),
-    "com.github.kperson.delivery.DeliveryStreamProcessorImpl" -> new com.github.kperson.delivery.DeliveryStreamProcessorImpl(),
-    "com.github.kperson.wal.WriteAheadStreamProcessorImpl" -> new com.github.kperson.wal.WriteAheadStreamProcessorImpl(),
-    "com.github.kperson.api.LambdaAPI" -> new com.github.kperson.api.LambdaAPI()
-  )
 
   def main(args: Array[String]) {
     val runtimeApiEndpoint = System.getenv("AWS_LAMBDA_RUNTIME_API")
-    val handler = handlers(System.getenv("_HANDLER"))
-
+    val handler = Class.forName(System.getenv("_HANDLER")).asInstanceOf[RequestStreamHandler]
     run(runtimeApiEndpoint, handler)
   }
 
 
   def runRequest(method: String, url: String, body: Array[Byte] = Array.emptyByteArray): Future[AWSHttpResponse] = {
     val builder = HttpRequest.newBuilder(new URI(url))
-    builder.method(method, BodyPublishers.ofByteArray(body)).timeout(java.time.Duration.ofSeconds(61))
+    builder.method(method, BodyPublishers.ofByteArray(body)).timeout(java.time.Duration.ofSeconds(25))
     client.future(builder.build())
   }
 
@@ -63,7 +55,7 @@ object  Main {
         "POST",
         s"http://$runtimeApiEndpoint/2018-06-01/runtime/invocation/$requestId/response",
         out.toByteArray
-      ), 60.seconds)
+      ), 30.seconds)
       run(runtimeApiEndpoint, handler)
     }
     catch {
@@ -83,7 +75,7 @@ object  Main {
             s"http://$runtimeApiEndpoint/2018-06-01/runtime/invocation/$requestId/error",
             errorMessage.getBytes(StandardCharsets.UTF_8)
           ),
-          60.seconds
+          30.seconds
         )
         run(runtimeApiEndpoint, handler)
     }
