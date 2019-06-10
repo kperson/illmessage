@@ -19,7 +19,7 @@ case class SNSMessage[T](id: String, receiptHandle: String, body: T, attributes:
 }
 
 case class BatchFailure(code: String, message: String)
-case class BatchSendException(failures: List[BatchFailure], response: AWSHttpResponse) extends RuntimeException(new String(response.body))
+case class BatchSendException(failures: List[BatchFailure], response: AWSHttpResponse[Array[Byte]]) extends RuntimeException(new String(response.body))
 
 
 object SQSClient {

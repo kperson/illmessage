@@ -175,7 +175,7 @@ class AmazonDeliveryDAO(
     client.request(payload, "DynamoDB_20120810.DeleteItem").run().map { _ =>
       false
     }.recover {
-      case AWSError(response) if new String(response.body).contains("ConditionalCheckFailedException") => true
+      case a @ AWSError(_) if new String(a.asInstanceOf[AWSError[Array[Byte]]].response.body).contains("ConditionalCheckFailedException") => true
     }
   }
 

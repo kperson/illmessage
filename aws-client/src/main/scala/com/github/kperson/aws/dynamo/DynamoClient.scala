@@ -115,7 +115,7 @@ class DynamoClient(
     }
   }
 
-  private def readList[A <: AnyRef](response: AWSHttpResponse, convertFromSnakeCase: Boolean)(implicit formats: Formats, mf: Manifest[A]) = {
+  private def readList[A <: AnyRef](response: AWSHttpResponse[Array[Byte]], convertFromSnakeCase: Boolean)(implicit formats: Formats, mf: Manifest[A]) = {
     val m = read[Map[String, Any]](new String(response.body, StandardCharsets.UTF_8))
     val queryLastEvaluatedKey = m.get("LastEvaluatedKey").map { _.asInstanceOf[Map[String, Any]] }
 

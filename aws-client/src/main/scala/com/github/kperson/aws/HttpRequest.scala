@@ -47,7 +47,7 @@ class HttpRequest(
     payload
   )
 
-  def run(timeout: FiniteDuration = 10.seconds): Future[AWSHttpResponse] = {
+  def run(timeout: FiniteDuration = 10.seconds): Future[AWSHttpResponse[Array[Byte]]] = {
     HttpRequest.nativeHttpClient.awsRequestFuture(url, signing, timeout)
   }
 

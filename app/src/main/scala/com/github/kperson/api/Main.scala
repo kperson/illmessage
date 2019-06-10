@@ -2,7 +2,7 @@ package com.github.kperson.api
 
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler
 import com.github.kperson.aws.{AWSHttp, AWSHttpResponse}
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, PrintWriter, StringWriter}
+import java.io._
 import java.net.URI
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest}
@@ -31,28 +31,34 @@ object  Main {
   }
 
 
-  def runRequest(method: String, url: String, body: Array[Byte] = Array.emptyByteArray): Future[AWSHttpResponse] = {
+  def runRequest(method: String, url: String, body: Array[Byte] = Array.emptyByteArray): Future[AWSHttpResponse[Array[Byte]]] = {
     val builder = HttpRequest.newBuilder(new URI(url))
     builder.method(method, BodyPublishers.ofByteArray(body)).timeout(java.time.Duration.ofSeconds(25))
     client.future(builder.build())
   }
 
+  def runRequestInputStream(method: String, url: String, body: Array[Byte] = Array.emptyByteArray): Future[AWSHttpResponse[InputStream]] = {
+    val builder = HttpRequest.newBuilder(new URI(url))
+    builder.method(method, BodyPublishers.ofByteArray(body)).timeout(java.time.Duration.ofSeconds(25))
+    client.futureInputStream(builder.build())
+  }
+
   def run(runtimeApiEndpoint: String, handler: RequestStreamHandler): Unit = {
     try {
-      val jobFetchFuture = runRequest("GET", s"http://$runtimeApiEndpoint/2018-06-01/runtime/invocation/next")
-      val jobFetch = Await.result(jobFetchFuture, 30.seconds)
-      val requestId = jobFetch.lowerHeaders("Lambda-Runtime-Aws-Request-Id".toLowerCase)
-      runCycle(runtimeApiEndpoint, handler, jobFetch, requestId)
+      val jobFetchFuture = runRequestInputStream("GET", s"http://$runtimeApiEndpoint/2018-06-01/runtime/invocation/next")
+      val is = Await.result(jobFetchFuture, 30.seconds)
+      val requestId = is.lowerHeaders("Lambda-Runtime-Aws-Request-Id".toLowerCase)
+      runCycle(runtimeApiEndpoint, handler, is.body, requestId)
     }
     catch {
       case _: Throwable => run(runtimeApiEndpoint, handler)
     }
   }
 
-  def runCycle(runtimeApiEndpoint: String, handler: RequestStreamHandler, jobFetch: AWSHttpResponse, requestId: String) {
+  def runCycle(runtimeApiEndpoint: String, handler: RequestStreamHandler, is: InputStream, requestId: String) {
     try {
       val out = new ByteArrayOutputStream()
-      handler.handleRequest(new ByteArrayInputStream(jobFetch.body), out, null)
+      handler.handleRequest(is, out, null)
       Await.result(runRequest(
         "POST",
         s"http://$runtimeApiEndpoint/2018-06-01/runtime/invocation/$requestId/response",

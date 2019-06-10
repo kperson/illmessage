@@ -33,7 +33,7 @@ trait RegisterHandler extends RequestStreamHandler {
   private val client = HttpClient.newHttpClient()
 
 
-  def runRequest(method: String, url: String, body: Array[Byte] = Array.emptyByteArray, headers: Map[String, String] = Map.empty): Future[AWSHttpResponse] = {
+  def runRequest(method: String, url: String, body: Array[Byte] = Array.emptyByteArray, headers: Map[String, String] = Map.empty): Future[AWSHttpResponse[Array[Byte]]] = {
     val builder = HttpRequest.newBuilder(new URI(url))
     builder.method(method, BodyPublishers.ofByteArray(body))
     headers.foreach { case (k, v) =>
