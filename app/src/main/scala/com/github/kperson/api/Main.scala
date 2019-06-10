@@ -43,10 +43,19 @@ object  Main {
     client.future(builder.build())
   }
 
-  def run(runtimeApiEndpoint: String, handler: RequestStreamHandler) {
-    val jobFetchFuture = runRequest("GET", s"http://$runtimeApiEndpoint/2018-06-01/runtime/invocation/next")
-    val jobFetch = Await.result(jobFetchFuture, 30.seconds)
-    val requestId = jobFetch.lowerHeaders("Lambda-Runtime-Aws-Request-Id".toLowerCase)
+  def run(runtimeApiEndpoint: String, handler: RequestStreamHandler): Unit = {
+    try {
+      val jobFetchFuture = runRequest("GET", s"http://$runtimeApiEndpoint/2018-06-01/runtime/invocation/next")
+      val jobFetch = Await.result(jobFetchFuture, 30.seconds)
+      val requestId = jobFetch.lowerHeaders("Lambda-Runtime-Aws-Request-Id".toLowerCase)
+      runCycle(runtimeApiEndpoint, handler, jobFetch, requestId)
+    }
+    catch {
+      case _: Throwable => run(runtimeApiEndpoint, handler)
+    }
+  }
+
+  def runCycle(runtimeApiEndpoint: String, handler: RequestStreamHandler, jobFetch: AWSHttpResponse, requestId: String) {
     try {
       val out = new ByteArrayOutputStream()
       handler.handleRequest(new ByteArrayInputStream(jobFetch.body), out, null)
