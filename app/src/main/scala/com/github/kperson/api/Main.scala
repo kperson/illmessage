@@ -23,10 +23,10 @@ object  Main {
 
 
   def main(args: Array[String]) {
+    new java.util.Timer()
     val runtimeApiEndpoint = System.getenv("AWS_LAMBDA_RUNTIME_API")
     val clazz = Class.forName(System.getenv("_HANDLER"))
-    val ct = clazz.getConstructor(classOf[String])
-    val handler = ct.newInstance().asInstanceOf[RequestStreamHandler]
+    val handler = clazz.getDeclaredConstructor().newInstance().asInstanceOf[RequestStreamHandler]
     run(runtimeApiEndpoint, handler)
   }
 
