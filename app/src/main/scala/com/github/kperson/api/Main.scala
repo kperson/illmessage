@@ -2,19 +2,18 @@ package com.github.kperson.api
 
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler
 import com.github.kperson.aws.{AWSHttp, AWSHttpResponse}
+import com.github.kperson.serialization._
 import java.io._
 import java.net.URI
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.charset.StandardCharsets
 
-import org.json4s.jackson.Serialization._
-import org.json4s.NoTypeHints
-import org.json4s.jackson.Serialization
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import AWSHttp._
+
 
 
 object  Main {
@@ -23,7 +22,6 @@ object  Main {
 
 
   def main(args: Array[String]) {
-    new java.util.Timer()
     val runtimeApiEndpoint = System.getenv("AWS_LAMBDA_RUNTIME_API")
     val clazz = Class.forName(System.getenv("_HANDLER"))
     val handler = clazz.getDeclaredConstructor().newInstance().asInstanceOf[RequestStreamHandler]
@@ -75,7 +73,8 @@ object  Main {
           "localizedMessage" -> ex.getMessage,
           "stackTrace" -> ex.printStackTrace(pw)
         )
-        val errorMessage = write(errorPayload)(Serialization.formats(NoTypeHints))
+
+        val errorMessage = writeJSON(errorPayload)
         System.err.println(errorMessage)
         Await.result(
           runRequest(

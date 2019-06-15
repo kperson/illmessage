@@ -1,17 +1,14 @@
 package com.github.kperson.delivery
 
 import com.github.kperson.model.{Message, MessageSubscription}
-import com.github.kperson.serialization.JSONFormats
+import com.github.kperson.serialization._
 import com.github.kperson.test.dynamo.DynamoSupport
 import com.github.kperson.test.spec.IllMessageSpec
 import com.github.kperson.wal.WALRecord
 
-import org.json4s.Formats
-
 
 class AmazonDeliveryDAOSpec extends IllMessageSpec with DynamoSupport with TestSupport {
 
-  implicit val formats: Formats = JSONFormats.formats
 
   "AmazonDeliveryDAO" should "queue messages" in withDynamo { (_, _, dynamoClient) =>
     val client = new AmazonDeliveryDAO(dynamoClient, "mailbox", "subMessageSequence")

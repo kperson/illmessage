@@ -1,34 +1,37 @@
 package com.github.kperson.serialization
 
 import com.github.kperson.lambda._
+import play.api.libs.json._
 
-import org.json4s.CustomSerializer
-import org.json4s.JsonAST.JString
 
-class MethodSerializer extends CustomSerializer[Method](_ => (
-  {
-    case JString(name) => name match {
-      case "GET" => GET
-      case "POST" => POST
-      case "PUT" => PUT
-      case "DELETE" => DELETE
-      case "PATCH" => PATCH
-      case "OPTIONS" => OPTIONS
-      case "TRACE" => TRACE
-      case "CONNECT" => CONNECT
-      case "HEAD" => HEAD
+trait MethodSerializer {
 
+  implicit val methodWrites: Writes[Method] = {
+    case GET => JsString("GET")
+    case POST => JsString("POST")
+    case PUT => JsString("PUT")
+    case DELETE => JsString("DELETE")
+    case PATCH => JsString("PATCH")
+    case OPTIONS => JsString("OPTIONS")
+    case TRACE => JsString("TRACE")
+    case CONNECT => JsString("CONNECT")
+    case HEAD => JsString("HEAD")
+  }
+
+  implicit val methodReads: Reads[Method] = { value =>
+    value.asInstanceOf[JsString].value match {
+      case "GET" =>  JsSuccess(GET)
+      case "POST" => JsSuccess(POST)
+      case "PUT" => JsSuccess(PUT)
+      case "DELETE" => JsSuccess(DELETE)
+      case "PATCH" => JsSuccess(PATCH)
+      case "OPTIONS" => JsSuccess(OPTIONS)
+      case "TRACE" => JsSuccess(TRACE)
+      case "CONNECT" => JsSuccess(CONNECT)
+      case "HEAD" => JsSuccess(HEAD)
     }
-  },
-  {
-    case GET => JString("GET")
-    case POST => JString("POST")
-    case PUT => JString("PUT")
-    case DELETE => JString("DELETE")
-    case PATCH => JString("PATCH")
-    case OPTIONS => JString("OPTIONS")
-    case TRACE => JString("TRACE")
-    case CONNECT => JString("CONNECT")
-    case HEAD => JString("HEAD")
-  })
-)
+  }
+
+}
+
+

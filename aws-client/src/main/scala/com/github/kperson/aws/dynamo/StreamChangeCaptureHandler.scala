@@ -3,10 +3,8 @@ package com.github.kperson.aws.dynamo
 import com.amazonaws.services.lambda.runtime.{Context, RequestStreamHandler}
 import java.io.{InputStream, OutputStream}
 
-import org.json4s.{Formats, NoTypeHints}
-import org.json4s.jackson.JsonMethods._
-import org.json4s.JsonAST.{JArray, JObject, JString, JValue}
-import org.json4s.jackson.Serialization
+import play.api.libs.json._
+
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -17,9 +15,8 @@ trait StreamChangeCaptureHandler extends RequestStreamHandler {
   def handleChange(change: ChangeCapture[DynamoMap])
 
   def handleRequest(input: InputStream, output: OutputStream, context: Context) {
-    implicit val formats: Formats = Serialization.formats(NoTypeHints)
 
-    parse(input) match {
+    Json.parse(input) match {
       case StreamChangeCapture(list) =>
         list.foreach { i =>
           handleChange(i)
@@ -39,9 +36,8 @@ trait AsyncStreamChangeCaptureHandler extends RequestStreamHandler {
   def handleChange(change: ChangeCapture[DynamoMap]): Future[Any]
 
   def handleRequest(input: InputStream, output: OutputStream, context: Context) {
-    implicit val formats: Formats = Serialization.formats(NoTypeHints)
 
-    val f = parse(input) match {
+    val f = Json.parse(input) match {
       case StreamChangeCapture(list) =>
         val futures = list.map { i =>
           handleChange(i)
@@ -60,29 +56,29 @@ trait AsyncStreamChangeCaptureHandler extends RequestStreamHandler {
 
 object StreamChangeCapture {
 
-  def unapply(value: JValue): Option[List[ChangeCapture[DynamoMap]]] = {
+  def unapply(value: JsValue): Option[List[ChangeCapture[DynamoMap]]] = {
     try {
-      val records = (value \ "Records").asInstanceOf[JArray]
-      Some(records.arr.map { record =>
-        val eventName = (record \ "eventName").asInstanceOf[JString].s
-        val source = (record \ "eventSourceARN").asInstanceOf[JString].s
+      val records = (value \ "Records").asInstanceOf[JsArray].value
+      Some(records.map { record =>
+        val eventName = (record \ "eventName").asInstanceOf[JsString].value
+        val source = (record \ "eventSourceARN").asInstanceOf[JsString].value
         if (eventName == "INSERT") {
-          val image = (record \ "dynamodb" \ "NewImage").asInstanceOf[JObject]
+          val image = (record \ "dynamodb" \ "NewImage").asInstanceOf[JsObject]
           New(source, DynamoMap(parseImage(image)))
         }
         else if (eventName == "REMOVE") {
-          val image = (record \ "dynamodb" \ "OldImage").asInstanceOf[JObject]
+          val image = (record \ "dynamodb" \ "OldImage").asInstanceOf[JsObject]
           Delete(source, DynamoMap(parseImage(image)))
         }
         else if(eventName == "MODIFY") {
-          val oldImage = DynamoMap(parseImage((record \ "dynamodb" \ "OldImage").asInstanceOf[JObject]))
-          val newImage = DynamoMap(parseImage((record \ "dynamodb" \ "NewImage").asInstanceOf[JObject]))
+          val oldImage = DynamoMap(parseImage((record \ "dynamodb" \ "OldImage").asInstanceOf[JsObject]))
+          val newImage = DynamoMap(parseImage((record \ "dynamodb" \ "NewImage").asInstanceOf[JsObject]))
           Update(source, oldImage, newImage)
         }
         else {
           throw new IllegalArgumentException(s"'$eventName' is unsupported event name")
         }
-      })
+      }.toList)
     }
     catch {
       case _: java.lang.ClassCastException => None
@@ -90,8 +86,8 @@ object StreamChangeCapture {
     }
   }
 
-  private def parseImage(value: JObject): Map[String, DynamoPrimitive] = {
-    value.obj.map { case (k, v) => (k, DynamoPrimitive.fromJValue(v)) }.toMap
+  private def parseImage(value: JsObject): Map[String, DynamoPrimitive] = {
+    value.value.map { case (k, v) => (k, DynamoPrimitive.fromJValue(v)) }.toMap
   }
 
 }

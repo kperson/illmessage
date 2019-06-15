@@ -2,7 +2,9 @@ package com.github.kperson.aws.dynamo
 
 import java.util.Base64
 
-import org.json4s.JsonAST._
+
+import play.api.libs.json._
+
 
 sealed trait DynamoPrimitive {
 
@@ -13,28 +15,21 @@ sealed trait DynamoPrimitive {
 
 object DynamoSerialization {
 
-  implicit class RichJObject(self: JValue) {
-    def rawToDynamo: Option[DynamoPrimitive] = {
+  implicit class RichJObject(self: JsValue) {
+    def rawToDynamo: DynamoPrimitive = {
       self match {
-        case JBool(bool) => Some(DynamoBoolean(bool))
-        case JInt(int) => Some(DynamoBigDecimal(BigDecimal(int)))
-        case JLong(long) => Some(DynamoBigDecimal(BigDecimal(long)))
-        case JDouble(double) => Some(DynamoBigDecimal(BigDecimal(double)))
-        case JDecimal(decimal) => Some(DynamoBigDecimal(decimal))
-        case JString(str) => Some(DynamoString(str))
-        case JNull => Some(DynamoNull)
-        case JObject(l) =>
-          val m = l.flatMap { case (k, v) =>
-            v.rawToDynamo match {
-              case Some(a) => Some((k, a))
-              case _ => None
-            }
-          }.toMap
-          Some(DynamoMap(m))
-        case JArray(arr) =>
-          Some(DynamoList(arr.flatMap { _.rawToDynamo }))
-        case JSet(set) => Some(DynamoList(set.flatMap { _.rawToDynamo }.toList))
-        case JNothing => None
+        case JsBoolean(bool) => DynamoBoolean(bool)
+        case JsNumber(value) => DynamoBigDecimal(value)
+        case JsString(str) => DynamoString(str)
+        case JsNull => DynamoNull
+        case JsObject(l) =>
+          val m = l.map { case (k, v) =>
+            (k, v.rawToDynamo)
+          }
+          DynamoMap(m.toMap)
+        case JsArray(arr) =>
+          DynamoList(arr.map { _.rawToDynamo }.toList)
+        case  _ => DynamoNull
       }
     }
   }
@@ -43,7 +38,7 @@ object DynamoSerialization {
 
 object DynamoPrimitive {
 
-  def fromJValue: PartialFunction[JValue, DynamoPrimitive] = {
+  def fromJValue: PartialFunction[JsValue, DynamoPrimitive] = {
     case DynamoString(str) => DynamoString(str)
     case DynamoBinary(arr) => DynamoBinary(arr)
     case DynamoBigDecimal(dec) => DynamoBigDecimal(dec)
@@ -56,6 +51,18 @@ object DynamoPrimitive {
     case DynamoMap(map) => DynamoMap(map)
   }
 
+  def fromAny: PartialFunction[Any, JsValue] = {
+    case x: String => JsString(x)
+    case x: Int => JsNumber(BigDecimal(x))
+    case x: Long => JsNumber(BigDecimal(x))
+    case x: Double => JsNumber(BigDecimal(x))
+    case x: BigDecimal => JsNumber(x)
+    case x: Boolean => JsBoolean(x)
+    case x: Array[Any] => JsArray(x.map(fromAny))
+    case x: Map[_, _] => JsObject(x.map { case (k, v) => (k.asInstanceOf[String], fromAny(v)) })
+    case x: Seq[Any] => JsArray(x.map(fromAny))
+    case _ => JsNull
+  }
 
 }
 
@@ -71,9 +78,9 @@ case class DynamoString(value: String) extends DynamoPrimitive {
 
 object DynamoString {
 
-  def unapply(arg: JValue): Option[String] = {
+  def unapply(arg: JsValue): Option[String] = {
     arg match {
-      case JObject(List(("S", JString(str)))) => Some(str)
+      case JsObject(m) => m.get("S").map { _.asInstanceOf[JsString].value }
       case _ => None
     }
   }
@@ -83,9 +90,9 @@ object DynamoString {
 
 object DynamoNull extends DynamoPrimitive {
 
-  def unapply(arg: JValue): Boolean = {
+  def unapply(arg: JsValue): Boolean = {
     arg match {
-      case JObject(List(("NULL", JBool(bool)))) if bool => true
+      case JsObject(m) if m.contains("NULL") => m("NULL").asInstanceOf[JsBoolean].value
       case _ => false
     }
   }
@@ -115,9 +122,9 @@ case class DynamoBinary(value: Array[Byte]) extends DynamoPrimitive with Equals 
 }
 object DynamoBinary {
 
-  def unapply(arg: JValue): Option[Array[Byte]] = {
+  def unapply(arg: JsValue): Option[Array[Byte]] = {
     arg match {
-      case JObject(List(("B", JString(str)))) => Some(Base64.getDecoder.decode(str))
+      case JsObject(m) if m.contains("B") => Some(Base64.getDecoder.decode(m("B").asInstanceOf[JsString].value))
       case _ => None
     }
   }
@@ -138,9 +145,9 @@ case class DynamoBigDecimal(value: BigDecimal) extends DynamoPrimitive {
 
 object DynamoBigDecimal {
 
-  def unapply(arg: JValue): Option[BigDecimal] = {
+  def unapply(arg: JsValue): Option[BigDecimal] = {
     arg match {
-      case JObject(List(("N", JString(str)))) => Some(BigDecimal(str))
+      case JsObject(m) if m.contains("N") => Some(BigDecimal(m("N").asInstanceOf[JsString].value))
       case _ => None
     }
   }
@@ -161,9 +168,9 @@ case class DynamoBoolean(value: Boolean) extends DynamoPrimitive {
 
 object DynamoBoolean {
 
-  def unapply(arg: JValue): Option[Boolean] = {
+  def unapply(arg: JsValue): Option[Boolean] = {
     arg match {
-      case JObject(List(("BOOL", JBool(bool)))) => Some(bool)
+      case JsObject(m) if m.contains("BOOL") => Some(m("BOOL").asInstanceOf[JsBoolean].value)
       case _ => None
     }
   }
@@ -184,10 +191,10 @@ case class DynamoStringSet(value: Set[String]) extends DynamoPrimitive {
 
 object DynamoStringSet {
 
-  def unapply(arg: JValue): Option[Set[String]] = {
+  def unapply(arg: JsValue): Option[Set[String]] = {
     arg match {
-      case JObject(List(("SS", JArray(arr)))) =>
-        Some(arr.map { _.asInstanceOf[JString].s }.toSet)
+      case JsObject(m) if m.contains("SS") =>
+        Some(m("SS").as[JsArray].value.map { _.asInstanceOf[JsString].value }.toSet)
       case _ => None
     }
   }
@@ -206,11 +213,10 @@ case class DynamoBigDecimalSet(value: Set[BigDecimal]) extends DynamoPrimitive {
 }
 
 object DynamoBigDecimalSet {
-
-  def unapply(arg: JValue): Option[Set[BigDecimal]] = {
+  def unapply(arg: JsValue): Option[Set[BigDecimal]] = {
     arg match {
-      case JObject(List(("NS", JArray(arr)))) =>
-        Some(arr.map { _.asInstanceOf[JString].s }.map { BigDecimal(_) }.toSet)
+      case JsObject(m) if m.contains("NS") =>
+        Some(m("NS").as[JsArray].value.map { _.asInstanceOf[JsNumber].value }.toSet)
       case _ => None
     }
   }
@@ -236,10 +242,10 @@ case class DynamoBinarySet(value: Set[Array[Byte]]) extends DynamoPrimitive with
 
 object DynamoBinarySet {
 
-  def unapply(arg: JValue): Option[Set[Array[Byte]]] = {
+  def unapply(arg: JsValue): Option[Set[Array[Byte]]] = {
     arg match {
-      case JObject(List(("BS", JArray(arr)))) =>
-        Some(arr.map { _.asInstanceOf[JString].s }.map { Base64.getDecoder.decode(_) }.toSet)
+      case JsObject(m) if m.contains("BS") =>
+        Some(m("BS").as[JsArray].value.map { x => Base64.getDecoder.decode(x.asInstanceOf[JsString].value ) }.toSet)
       case _ => None
     }
   }
@@ -261,11 +267,10 @@ case class DynamoList(value: List[DynamoPrimitive]) extends DynamoPrimitive {
 
 object DynamoList {
 
-  def unapply(arg: JValue): Option[List[DynamoPrimitive]] = {
+  def unapply(arg: JsValue): Option[List[DynamoPrimitive]] = {
     arg match {
-      case JObject(List(("L", JArray(arr)))) =>
-        val l: List[DynamoPrimitive] = arr.collect(DynamoPrimitive.fromJValue)
-        Some(l)
+      case JsObject(m) if m.contains("L") =>
+        Some(m("L").asInstanceOf[JsArray].value.collect(DynamoPrimitive.fromJValue).toList)
       case _ => None
     }
   }
@@ -289,11 +294,12 @@ object DynamoMap {
 
   def unapply(arg: Map[String, DynamoPrimitive]) = Some(arg)
 
-  def unapply(arg: JValue): Option[Map[String, DynamoPrimitive]] = {
+  def unapply(arg: JsValue): Option[Map[String, DynamoPrimitive]] = {
     arg match {
-      case JObject(List(("M", JObject(obj)))) =>
-        val m = obj.map { case (k, v) => (k, DynamoPrimitive.fromJValue(v)) }.toMap
-        Some(m)
+      case JsObject(m) if m.contains("M") =>
+        val myMap = m("M").asInstanceOf[JsObject]
+        val res = myMap.value.map { case (k, v) => (k, DynamoPrimitive.fromJValue(v)) }.toMap
+        Some(res)
       case _ => None
     }
   }

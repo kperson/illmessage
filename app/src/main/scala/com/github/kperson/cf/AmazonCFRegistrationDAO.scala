@@ -1,8 +1,8 @@
 package com.github.kperson.cf
 
 import com.github.kperson.aws.dynamo.DynamoClient
-import com.github.kperson.serialization.JSONFormats
-import org.json4s.Formats
+import com.github.kperson.serialization._
+
 
 import scala.concurrent.Future
 
@@ -12,7 +12,6 @@ class AmazonCFRegistrationDAO(
   registrationTable: String
 ) extends CFRegisterDAO {
 
-  implicit val formats: Formats = JSONFormats.formats
 
   def saveRegistration(physicalResourceId: String, subscriptionId: String, exchange: String): Future[Any] = {
     client.putItem(registrationTable, CFRegistration(physicalResourceId, subscriptionId, exchange))

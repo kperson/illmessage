@@ -2,10 +2,8 @@ package com.github.kperson.message
 
 import com.github.kperson.aws.sqs.SQSClient
 import com.github.kperson.delivery.Delivery
-import com.github.kperson.serialization.JSONFormats
 
-import org.json4s.Formats
-import org.json4s.jackson.Serialization.write
+import com.github.kperson.serialization._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,8 +21,6 @@ class AmazonQueueClient(
   apiEndpoint: String
 )(implicit ec: ExecutionContext) extends QueueClient {
 
-  implicit val formats: Formats = JSONFormats.formats
-
   def sendMessage(delivery: Delivery): Future[Any] = {
     val targetIsFiFo = delivery.subscription.queue.endsWith(".fifo")
     val finalDelivery = FinalDelivery(
@@ -34,9 +30,12 @@ class AmazonQueueClient(
       delivery.message.body,
       apiEndpoint
     )
+
+
+
     sqsClient.sendMessage(
       delivery.subscription.queue,
-      write(finalDelivery),
+      writeJSON(finalDelivery),
       None,
       if (targetIsFiFo) Some(delivery.messageId) else None,
       if (targetIsFiFo) Some(delivery.subscription.id) else None,

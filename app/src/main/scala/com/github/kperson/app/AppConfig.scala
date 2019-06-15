@@ -1,26 +1,24 @@
 package com.github.kperson.app
 
-import com.typesafe.config.{Config, ConfigFactory}
 
+class AppConfig() {
 
-class AppConfig(config: Config = ConfigFactory.load().getConfig("app")) {
+  def awsRegion: String = System.getenv("REGION")
 
-  def awsRegion: String = config.getString("aws.region")
+  def walTable: String = System.getenv("WAL_TABLE")
 
-  def walTable: String = config.getString("aws.wal-table")
+  def deliveryTable: String = System.getenv("MAILBOX_TABLE")
 
-  def deliveryTable: String = config.getString("aws.mailbox-table")
+  def accountId: String = System.getenv("ACCOUNT_ID")
 
-  def accountId: String = config.getString("aws.account-id")
+  def cfRegistrationTable: String = System.getenv("CF_REGISTRATION_TABLE")
 
-  def cfRegistrationTable: String = config.getString("aws.cf-registration-table")
+  def subscriptionTable: String = System.getenv("SUBSCRIPTION_TABLE")
 
-  def subscriptionTable: String = config.getString("aws.subscription-table")
+  def subscriptionMessageSequenceTable: String = System.getenv("SUBSCRIPTION_MESSAGE_TABLE")
 
-  def subscriptionMessageSequenceTable: String = config.getString("aws.subscription-message-sequence-table")
+  def port: Int = if(System.getenv().containsKey("PORT")) System.getenv("PORT").toInt else 8080
 
-  def port: Int = config.getString("port").toInt
-
-  def apiEndpoint: String = config.getString("aws.api-endpoint")
+  def apiEndpoint: String = System.getenv("API_ENDPOINT")
 
 }

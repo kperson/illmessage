@@ -3,15 +3,13 @@ package com.github.kperson.subscription
 import com.github.kperson.model.MessageSubscription
 import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.delivery.Delivery
-import com.github.kperson.serialization.JSONFormats
-import org.json4s.Formats
+import com.github.kperson.serialization._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
 class AmazonSubscriptionDAO(client: DynamoClient, table: String, deliveryTable: String)(implicit ec: ExecutionContext) extends SubscriptionDAO {
 
-  implicit val defaultFormats: Formats = JSONFormats.formats
 
   def fetchSubscriptions(exchange: String, routingKey: String): Future[List[MessageSubscription]] = {
     fetchSubscriptionsHelper(exchange, routingKey)
@@ -68,6 +66,7 @@ class AmazonSubscriptionDAO(client: DynamoClient, table: String, deliveryTable: 
       ),
       consistentRead = true
     ).flatMap { rs =>
+      println(rs)
       if(rs.results.isEmpty) {
         Future.successful(true)
       }

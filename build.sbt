@@ -21,7 +21,7 @@ lazy val awsClient = (project in file("aws-client")).
   settings(libraryDependencies ++= Seq (
     "com.amazonaws"           %  "aws-java-sdk-core"           % "1.11.416",
     "com.amazonaws"           %  "aws-lambda-java-core"        % "1.2.0",
-    "org.json4s"              %% "json4s-jackson"              % "3.6.1",
+    "com.typesafe.play"       %% "play-json"                   % "2.7.3",
     "org.scala-stm"           %% "scala-stm"                   % "0.8"
   ))
 
@@ -36,9 +36,6 @@ lazy val testSupport = (project in file("test-support")).
 lazy val app = (project in file("app")).
   settings(commonSettings: _*).
   settings(libraryDependencies ++= Seq (
-    "com.typesafe"            % "config"                       % "1.3.4",
-    "org.json4s"              %% "json4s-jackson"              % "3.6.1",
-    "org.slf4j"               %  "slf4j-api"                   % "1.7.25",
-    "ch.qos.logback"          %  "logback-classic"             % "1.2.3" % "runtime",
+    "com.typesafe.play"       %% "play-json"                   % "2.7.3",
     "tech.sparse"             %% "trail"                       % "0.2.0"
   )).dependsOn(testSupport % "test", awsClient)

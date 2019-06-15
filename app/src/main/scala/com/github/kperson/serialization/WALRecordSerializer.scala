@@ -1,27 +1,20 @@
 package com.github.kperson.serialization
 
-import com.github.kperson.model.Message
 import com.github.kperson.wal.WALRecord
 
-import org.json4s.{CustomSerializer, Extraction, Formats}
-import org.json4s.JsonAST._
+import play.api.libs.json._
 
 
-class WALRecordSerializer extends CustomSerializer[WALRecord](format => (
-  {
-    case json: JObject =>
-      implicit val formats: Formats = format
-      val messageId = (json \ "messageId").extract[String]
-      val message = (json \ "message").extract[Message]
-      WALRecord(message, messageId)
-  },
-  {
-    case record: WALRecord =>
-      JObject(
-        JField("messageId", JString(record.messageId)) ::
-        JField("message", Extraction.decompose(record.message)(format)) ::
-        JField("partitionKey", JString(record.message.partitionKey)) ::
-        Nil
-      )
+trait WALRecordSerializer {
+
+
+  implicit val walRecordSerializerWrites: Writes[WALRecord] = { o =>
+    val base = Json.writes[WALRecord].writes(o)
+    base + ("partitionKey", JsString(o.message.partitionKey))
   }
-))
+
+  implicit val walRecordSerializerReads: Reads[WALRecord] = { o =>
+    val mapped = o.asInstanceOf[JsObject].value.filter { case (k, _) => !List("partitionKey").contains(k)  }
+    Json.reads[WALRecord].reads(JsObject(mapped))
+  }
+}

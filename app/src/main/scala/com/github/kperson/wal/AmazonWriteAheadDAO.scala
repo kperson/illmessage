@@ -4,13 +4,11 @@ import java.util.UUID
 
 import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.model.Message
-import com.github.kperson.serialization.JSONFormats
 import com.github.kperson.util.Backoff
-
-import org.json4s.Formats
 
 import scala.concurrent.Future
 
+import com.github.kperson.serialization._
 
 case class WALRecord(
   message: Message,
@@ -18,8 +16,6 @@ case class WALRecord(
 )
 
 class AmazonWriteAheadDAO(client: DynamoClient, walTable: String) extends WriteAheadDAO {
-
-  implicit val defaultFormats: Formats = JSONFormats.formats
 
   import client.ec
 

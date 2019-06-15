@@ -2,15 +2,14 @@ package com.github.kperson.delivery
 
 import com.github.kperson.aws.dynamo.DynamoClient
 import com.github.kperson.model.MessageSubscription
-import com.github.kperson.serialization.JSONFormats
+import com.github.kperson.serialization._
 import com.github.kperson.wal.WALRecord
 import com.github.kperson.util.Backoff
 import com.github.kperson.aws.AWSError
 
 import java.nio.charset.StandardCharsets
 
-import org.json4s.Formats
-import org.json4s.jackson.Serialization.{read, write}
+import play.api.libs.json.Json
 
 import scala.concurrent.Future
 
@@ -24,9 +23,11 @@ class AmazonDeliveryDAO(
   val inFlight = "inFlight"
 
   import client.ec
-  implicit val formats: Formats = JSONFormats.formats
 
   private val startingValue = Int.MinValue.toLong
+
+  import client.mapReads
+  import client.mapWrites
 
   def queueMessages(subscriptions: List[MessageSubscription], record: WALRecord): Future[List[Delivery]] = {
     val deliveriesFut = Future.sequence(
@@ -35,7 +36,7 @@ class AmazonDeliveryDAO(
           //if there are no pending message for this group and subscription, allow it be sent immediately
           //otherwise, set it to pending
           val status = if (dId == startingValue + 1L) inFlight else "pending"
-          Delivery(record.message, sub, dId, status, record.messageId)
+          Delivery(record.message, sub, dId, status, record.messageId, None)
 
         }
       }
@@ -84,9 +85,9 @@ class AmazonDeliveryDAO(
       "ExpressionAttributeValues" -> expressionAttributeValues,
       "ReturnValues" -> "ALL_NEW"
     )
-    val payload = write(body).getBytes(StandardCharsets.UTF_8)
+    val payload = Json.toJson(body).toString().getBytes(StandardCharsets.UTF_8)
     client.request(payload, "DynamoDB_20120810.UpdateItem").run().map { res =>
-      val m = read[Map[String, Any]](new String(res.body, StandardCharsets.UTF_8))
+      val m = Json.fromJson[Map[String, Any]](Json.parse(res.body)).get
       val attributes = m("Attributes").asInstanceOf[Map[String, Any]]
       val subscriptionCt = attributes("subscriptionCt").asInstanceOf[Map[String, Any]]
       subscriptionCt("N").asInstanceOf[String].toLong
@@ -171,7 +172,7 @@ class AmazonDeliveryDAO(
       "ReturnValues" -> "NONE"
     )
 
-    val payload = write(body).getBytes(StandardCharsets.UTF_8)
+    val payload = Json.toJson(body).toString().getBytes(StandardCharsets.UTF_8)
     client.request(payload, "DynamoDB_20120810.DeleteItem").run().map { _ =>
       false
     }.recover {

@@ -11,9 +11,9 @@ import com.amazonaws.services.lambda.runtime.{Context, RequestStreamHandler}
 import com.github.kperson.app.AppInit
 import com.github.kperson.aws.AWSHttp._
 import com.github.kperson.aws.AWSHttpResponse
+import com.github.kperson.serialization._
 import com.github.kperson.subscription.SubscriptionDAO
-import org.json4s.jackson.Serialization
-import org.json4s.{Formats, NoTypeHints}
+import play.api.libs.json.Json
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -22,7 +22,6 @@ import scala.concurrent.duration._
 //https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-custom-resources.html
 trait RegisterHandler extends RequestStreamHandler {
 
-  implicit val formats: Formats = Serialization.formats(NoTypeHints)
   implicit val ec: ExecutionContext
 
   def accountId: String
@@ -44,12 +43,12 @@ trait RegisterHandler extends RequestStreamHandler {
 
   def handleRequest(input: InputStream, output: OutputStream, context: Context): Unit = {
     try {
-      val req = Serialization.read[CFRequest](input)
+      val req = Json.fromJson[CFRequest](Json.parse(input)).get
       println(s"got request: $req")
 
       val f = handleRegisterRequest(req)
       .map { res =>
-        Serialization.write(res)
+        Json.toJson(res).toString()
       }.flatMap { json =>
         runRequest("PUT", req.ResponseURL, json.getBytes(StandardCharsets.UTF_8), Map("Content-Type" -> ""))
       }

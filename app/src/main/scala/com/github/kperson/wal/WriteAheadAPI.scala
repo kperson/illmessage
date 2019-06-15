@@ -1,15 +1,14 @@
 package com.github.kperson.wal
 
 import com.github.kperson.model.Message
-import com.github.kperson.serialization.JSONFormats.formats
 import com.github.kperson.lambda._
-
-import org.json4s.jackson.Serialization._
+import com.github.kperson.serialization._
 
 import java.util.UUID
 
-import scala.concurrent.ExecutionContext
+import play.api.libs.json._
 
+import scala.concurrent.ExecutionContext
 import trail._
 
 
@@ -40,7 +39,7 @@ trait WriteAheadAPI {
 
   val writeAheadRoute: RequestHandler = {
     case (POST, writeAheadMatch(_), req) =>
-      val messages = read[List[MessagePayload]](req.bodyInputStream).map { _.toMessage }
+      val messages = Json.fromJson[List[MessagePayload]]( Json.parse(req.bodyInputStream)).get.map  { _.toMessage }
       writeAheadDAO.write(messages).map { _ =>
         LambdaHttpResponse(204)
       }
