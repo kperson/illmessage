@@ -39,7 +39,10 @@ trait WriteAheadStreamProcessor extends StreamChangeCaptureHandler {
       }
       rs <- deliveryDAO.queueMessages(allSubscriptions, record)
     } yield rs
-    enqueue.flatMap { _ => walDAO.remove(record.messageId, record.message.partitionKey) }
+    enqueue.flatMap { _ =>
+      println(s"removing: ${record}")
+      walDAO.remove(record.messageId, record.message.partitionKey)
+    }
   }
 }
 
