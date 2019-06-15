@@ -37,13 +37,11 @@ class SQSClient(
 
   private def createRequest(method: String, path: String = "", queryParams: Map[String, String]): HttpRequest = {
     val params = queryParams.map { case (k, v) => (k, Some(v)) }
-    println(params)
     new HttpRequest(credentialsProvider.getCredentials, "sqs", region, s"https://sqs.$region.amazonaws.com", method = method, queryParams = params, path = path)
   }
 
   private def createURLRequest(url: String, urlRegion: String, method: String, path: String, queryParams: Map[String, String]): HttpRequest = {
     val params = queryParams.map { case (k, v) => (k, Some(v)) }
-    println(params)
     new HttpRequest(credentialsProvider.getCredentials, "sqs", urlRegion, url, method = method, queryParams = params, path = path)
   }
 
