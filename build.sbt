@@ -37,5 +37,6 @@ lazy val app = (project in file("app")).
   settings(commonSettings: _*).
   settings(libraryDependencies ++= Seq (
     "com.typesafe.play"       %% "play-json"                   % "2.7.3",
-    "tech.sparse"             %% "trail"                       % "0.2.0"
+    "tech.sparse"             %% "trail"                       % "0.2.0",
+    "commons-logging"         % "commons-logging"              % "1.1.1"
   )).dependsOn(testSupport % "test", awsClient)

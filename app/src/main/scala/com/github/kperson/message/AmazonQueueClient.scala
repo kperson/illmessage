@@ -31,8 +31,6 @@ class AmazonQueueClient(
       apiEndpoint
     )
 
-
-
     sqsClient.sendMessage(
       delivery.subscription.queue,
       writeJSON(finalDelivery),

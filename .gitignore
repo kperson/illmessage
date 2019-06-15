@@ -25,3 +25,4 @@ target/
 .worksheet
 .DS_Store
 .env
+app-assembly-1.0.0.jar
