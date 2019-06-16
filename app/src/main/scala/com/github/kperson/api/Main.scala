@@ -3,7 +3,6 @@ package com.github.kperson.api
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler
 import com.github.kperson.aws.{AWSHttp, AWSHttpResponse}
 import com.github.kperson.serialization._
-
 import java.io._
 import java.net.URI
 import java.net.http.HttpRequest.BodyPublishers
@@ -13,8 +12,6 @@ import java.nio.charset.StandardCharsets
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import AWSHttp._
-
-
 
 object  Main {
 
@@ -27,7 +24,6 @@ object  Main {
     val handler = clazz.getDeclaredConstructor().newInstance().asInstanceOf[RequestStreamHandler]
     run(runtimeApiEndpoint, handler)
   }
-
 
   def runRequest(method: String, url: String, body: Array[Byte] = Array.emptyByteArray): Future[AWSHttpResponse[Array[Byte]]] = {
     val builder = HttpRequest.newBuilder(new URI(url))

@@ -41,7 +41,7 @@ object AWSHttp {
 
     def future(request: java.net.http.HttpRequest): Future[AWSHttpResponse[Array[Byte]]] = {
       val p = Promise[AWSHttpResponse[Array[Byte]]]()
-      self.sendAsync(request, BodyHandlers.ofByteArray()).thenAccept((rs) => {
+      self.sendAsync(request, BodyHandlers.ofByteArray()).thenAccept(rs => {
         if (rs.statusCode() < 400) {
           p.success(rs.toAWSResponse)
         }
@@ -58,7 +58,7 @@ object AWSHttp {
 
     def futureInputStream(request: java.net.http.HttpRequest): Future[AWSHttpResponse[InputStream]] = {
       val p = Promise[AWSHttpResponse[InputStream]]()
-      self.sendAsync(request, BodyHandlers.ofInputStream()).thenAccept((rs) => {
+      self.sendAsync(request, BodyHandlers.ofInputStream()).thenAccept(rs => {
         if (rs.statusCode() < 400) {
           p.success(rs.toAWSResponse)
         }
@@ -93,6 +93,9 @@ object AWSHttp {
       }
       if (!signing.payload.isEmpty) {
         builder.method(signing.httpMethod, BodyPublishers.ofByteArray(signing.payload))
+      }
+      else {
+        builder.method(signing.httpMethod, BodyPublishers.ofString(""))
       }
       builder.timeout(java.time.Duration.ofMillis(timeout.toMillis))
       future(builder.build())

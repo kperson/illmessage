@@ -180,8 +180,9 @@ class AmazonDeliveryDAO(
     }
   }
 
-  def markDeadLetter(delivery: Delivery, errorMessage: String): Future[Any] = {
-    client.putItem(deliveryTable, delivery.copy(status = "dead", error = Some(errorMessage)))
+  def markDeadLetter(delivery: Delivery, throwable: Throwable): Future[Any] = {
+    val error = DeliveryError(throwable.getMessage, throwable.getStackTrace.map { _.toString }.toList)
+    client.putItem(deliveryTable, delivery.copy(status = "dead", error = Some(error)))
   }
 
 

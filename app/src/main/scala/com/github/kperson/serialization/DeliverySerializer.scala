@@ -1,11 +1,15 @@
 package com.github.kperson.serialization
 
-import com.github.kperson.delivery.Delivery
+import com.github.kperson.delivery.{Delivery, DeliveryError}
 
 import play.api.libs.json._
 
 
 trait DeliverySerializer {
+
+  implicit val deliverErrorWrites: Writes[DeliveryError] = Json.writes[DeliveryError]
+
+  implicit val deliveryErrorReads: Reads[DeliveryError] = Json.reads[DeliveryError]
 
   implicit val deliveryWrites: Writes[Delivery] = { o =>
     val base = Json.writes[Delivery].writes(o)

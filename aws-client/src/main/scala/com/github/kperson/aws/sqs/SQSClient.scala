@@ -37,6 +37,7 @@ class SQSClient(
 
   private def createRequest(method: String, path: String = "", queryParams: Map[String, String]): HttpRequest = {
     val params = queryParams.map { case (k, v) => (k, Some(v)) }
+
     new HttpRequest(credentialsProvider.getCredentials, "sqs", region, s"https://sqs.$region.amazonaws.com", method = method, queryParams = params, path = path)
   }
 
