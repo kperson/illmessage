@@ -18,8 +18,8 @@ trait DeliverySerializer {
 
 
   implicit val deliveryReads: Reads[Delivery] = { o =>
-    val mapped = o.asInstanceOf[JsObject].value
-    Json.reads[Delivery](JsObject(mapped - "subscriptionStatus" - "subscriptionId"))
+    val mapped = o.asInstanceOf[JsObject].value - "subscriptionStatus" - "subscriptionId"
+    Json.reads[Delivery].reads(JsObject(mapped))
   }
 
 }

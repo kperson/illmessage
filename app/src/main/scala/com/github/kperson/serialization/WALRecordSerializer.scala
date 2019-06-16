@@ -14,7 +14,7 @@ trait WALRecordSerializer {
   }
 
   implicit val walRecordSerializerReads: Reads[WALRecord] = { o =>
-    val mapped = o.asInstanceOf[JsObject].value
-    Json.reads[WALRecord].reads(JsObject(mapped - "partitionKey"))
+    val mapped = o.asInstanceOf[JsObject].value - "partitionKey"
+    Json.reads[WALRecord].reads(JsObject(mapped))
   }
 }

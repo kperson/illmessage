@@ -16,8 +16,8 @@ trait MessageSubscriptionSerializer {
   }
 
   implicit val messageSubscriptionReads: Reads[MessageSubscription] = { o =>
-    val mapped = o.asInstanceOf[JsObject].value
-    Json.reads[MessageSubscription](JsObject(mapped - "subscriptionId" - "bindingKeyComponentsSize" - "bindingKeyComponents"))
+    val mapped = o.asInstanceOf[JsObject].value - "subscriptionId" - "bindingKeyComponentsSize" - "bindingKeyComponents"
+    Json.reads[MessageSubscription].reads(JsObject(mapped))
   }
 
 }
