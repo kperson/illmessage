@@ -4,9 +4,7 @@ import com.github.kperson.app.AppInit
 import com.github.kperson.aws.dynamo._
 import com.github.kperson.delivery.DeliveryDAO
 import com.github.kperson.subscription.SubscriptionDAO
-
 import com.github.kperson.serialization._
-
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -24,10 +22,7 @@ trait WriteAheadStreamProcessor extends StreamChangeCaptureHandler {
   def handleChange(change: ChangeCapture[DynamoMap]) {
     val item = change.map { _.flatten } match {
       case New(_, payload) =>
-        println(payload)
-        val x = Some(readJSON[WALRecord](writeJSON(payload)))
-        println(x)
-        x
+        Some(readJSON[WALRecord](writeJSON(payload)))
       case _ => None
     }
     item.foreach { record =>

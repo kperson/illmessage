@@ -1,10 +1,10 @@
 package com.github.kperson.aws.dynamo
 
 import com.amazonaws.services.lambda.runtime.{Context, RequestStreamHandler}
+
 import java.io.{InputStream, OutputStream}
 
 import play.api.libs.json._
-
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -57,23 +57,22 @@ trait AsyncStreamChangeCaptureHandler extends RequestStreamHandler {
 object StreamChangeCapture {
 
   def unapply(value: JsValue): Option[List[ChangeCapture[DynamoMap]]] = {
-    println(value.toString())
     try {
-      val records = (value \ "Records").asInstanceOf[JsArray].value
+      val records = (value \ "Records").get.as[JsArray].value
       Some(records.map { record =>
-        val eventName = (record \ "eventName").asInstanceOf[JsString].value
-        val source = (record \ "eventSourceARN").asInstanceOf[JsString].value
+        val eventName = (record \ "eventName").get.as[String]
+        val source = (record \ "eventSourceARN").get.as[String]
         if (eventName == "INSERT") {
-          val image = (record \ "dynamodb" \ "NewImage").asInstanceOf[JsObject]
+          val image = (record \ "dynamodb" \ "NewImage").get.as[JsObject]
           New(source, DynamoMap(parseImage(image)))
         }
         else if (eventName == "REMOVE") {
-          val image = (record \ "dynamodb" \ "OldImage").asInstanceOf[JsObject]
+          val image = (record \ "dynamodb" \ "OldImage").get.as[JsObject]
           Delete(source, DynamoMap(parseImage(image)))
         }
         else if(eventName == "MODIFY") {
-          val oldImage = DynamoMap(parseImage((record \ "dynamodb" \ "OldImage").asInstanceOf[JsObject]))
-          val newImage = DynamoMap(parseImage((record \ "dynamodb" \ "NewImage").asInstanceOf[JsObject]))
+          val oldImage = DynamoMap(parseImage((record \ "dynamodb" \ "OldImage").get.as[JsObject]))
+          val newImage = DynamoMap(parseImage((record \ "dynamodb" \ "NewImage").get.as[JsObject]))
           Update(source, oldImage, newImage)
         }
         else {
