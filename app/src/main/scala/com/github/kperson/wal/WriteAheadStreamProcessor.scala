@@ -24,7 +24,10 @@ trait WriteAheadStreamProcessor extends StreamChangeCaptureHandler {
   def handleChange(change: ChangeCapture[DynamoMap]) {
     val item = change.map { _.flatten } match {
       case New(_, payload) =>
-        Some(readJSON[WALRecord](writeJSON(payload)))
+        println(payload)
+        val x = Some(readJSON[WALRecord](writeJSON(payload)))
+        println(x)
+        x
       case _ => None
     }
     item.foreach { record =>
@@ -40,7 +43,6 @@ trait WriteAheadStreamProcessor extends StreamChangeCaptureHandler {
       rs <- deliveryDAO.queueMessages(allSubscriptions, record)
     } yield rs
     enqueue.flatMap { _ =>
-      println(s"removing: ${record}")
       walDAO.remove(record.messageId, record.message.partitionKey)
     }
   }

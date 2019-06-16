@@ -1,6 +1,6 @@
 package com.github.kperson.aws
 
-import java.net.http.{HttpClient}
+import java.net.http.HttpClient
 
 import com.amazonaws.auth.AWSCredentials
 

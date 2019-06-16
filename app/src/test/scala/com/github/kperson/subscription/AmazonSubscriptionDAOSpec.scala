@@ -13,33 +13,33 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AmazonSubscriptionDAOSpec extends IllMessageSpec with DynamoSupport with TestSupport {
 
-//  "SubscriptionDAO" should "register subscriptions" in withDynamo { (_, _, client) =>
-//    val dao = new AmazonSubscriptionDAO(client, "subscription", "mailbox")
-//
-//    val writeFetch = for {
-//      sub <- dao.save(subscription)
-//      rs <- dao.fetchSubscriptions(sub.exchange, subscription.bindingKey)
-//    }  yield rs.head
-//
-//    whenReady(writeFetch, secondsTimeOut(3)) { rs =>
-//      rs should be (subscription)
-//    }
-//
-//  }
-//
-//  it should "remove subscriptions" in withDynamo { (_, _, client) =>
-//    val dao = new AmazonSubscriptionDAO(client, "subscription", "mailbox")
-//    val writeDeleteFetch = for {
-//      sub <- dao.save(subscription)
-//      rs <- dao.delete(sub.exchange, subscription.id).flatMap { _ =>
-//        dao.fetchSubscriptions(sub.exchange, subscription.bindingKey)
-//      }
-//    } yield rs.headOption
-//
-//    whenReady(writeDeleteFetch, secondsTimeOut(3)) { rs =>
-//      rs should be (None)
-//    }
-//  }
+  "SubscriptionDAO" should "register subscriptions" in withDynamo { (_, _, client) =>
+    val dao = new AmazonSubscriptionDAO(client, "subscription", "mailbox")
+
+    val writeFetch = for {
+      sub <- dao.save(subscription)
+      rs <- dao.fetchSubscriptions(sub.exchange, subscription.bindingKey)
+    }  yield rs.head
+
+    whenReady(writeFetch, secondsTimeOut(3)) { rs =>
+      rs should be (subscription)
+    }
+
+  }
+
+  it should "remove subscriptions" in withDynamo { (_, _, client) =>
+    val dao = new AmazonSubscriptionDAO(client, "subscription", "mailbox")
+    val writeDeleteFetch = for {
+      sub <- dao.save(subscription)
+      rs <- dao.delete(sub.exchange, subscription.id).flatMap { _ =>
+        dao.fetchSubscriptions(sub.exchange, subscription.bindingKey)
+      }
+    } yield rs.headOption
+
+    whenReady(writeDeleteFetch, secondsTimeOut(3)) { rs =>
+      rs should be (None)
+    }
+  }
 
   it should "remove all deliveries" in withDynamo { (_, _, client) =>
     val dao = new AmazonSubscriptionDAO(client, "subscription", "mailbox")
