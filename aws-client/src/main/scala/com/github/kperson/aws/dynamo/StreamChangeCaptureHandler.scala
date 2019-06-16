@@ -57,6 +57,7 @@ trait AsyncStreamChangeCaptureHandler extends RequestStreamHandler {
 object StreamChangeCapture {
 
   def unapply(value: JsValue): Option[List[ChangeCapture[DynamoMap]]] = {
+    println(value.toString())
     try {
       val records = (value \ "Records").asInstanceOf[JsArray].value
       Some(records.map { record =>
