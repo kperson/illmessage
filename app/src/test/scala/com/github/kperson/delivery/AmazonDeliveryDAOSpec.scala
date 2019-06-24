@@ -52,7 +52,7 @@ class AmazonDeliveryDAOSpec extends IllMessageSpec with DynamoSupport with TestS
     val delivery = Delivery(message, subscription, 3L, "inFlight", record.messageId)
 
     val job = dynamoClient.putItem(client.deliveryTable, delivery).flatMap { _ =>
-      client.markDeadLetter(delivery, "my error")
+      client.markDeadLetter(delivery, new RuntimeException("my error"))
     }.flatMap { _ =>
       dynamoClient.getItem[Delivery](
         client.deliveryTable,
@@ -62,7 +62,6 @@ class AmazonDeliveryDAOSpec extends IllMessageSpec with DynamoSupport with TestS
 
     whenReady(job, secondsTimeOut(3)) { rs =>
       rs.status should be ("dead")
-      rs.error should be (Some("my error"))
     }
   }
 

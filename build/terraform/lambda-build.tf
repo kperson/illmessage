@@ -17,9 +17,12 @@ locals {
     ACCOUNT_ID                 = "${data.aws_caller_identity.current.account_id}"
     LOG_LEVEL                  = "INFO"
     API_ENDPOINT               = "https://${aws_api_gateway_rest_api.api.id}.execute-api.${var.region}.amazonaws.com/illmessage"
+    MAIN_CLASS                 = "com.github.kperson.api.Main"
+
   }
   layers = [
-    "arn:aws:lambda:us-east-1:193125195061:layer:java11:4"
+    "arn:aws:lambda:us-east-1:193125195061:layer:java11:6",
+    "arn:aws:lambda:us-east-1:193125195061:layer:scala_2_12_8:1"
   ]
 }
 

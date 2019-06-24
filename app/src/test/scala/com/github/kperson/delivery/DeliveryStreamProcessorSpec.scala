@@ -26,8 +26,8 @@ class DeliveryStreamProcessorSpec extends IllMessageSpec {
   )
 
 
-  val delivery = Delivery(message, subscription, 2, "inFlight", "m1")
-  val pendingDelivery = delivery.copy(status = "pending")
+  private val delivery = Delivery(message, subscription, 2, "inFlight", "m1")
+  private val pendingDelivery = delivery.copy(status = "pending")
 
 
   def withMocks(testDelivery: Delivery, repeat: Range)(testCode: DeliveryStreamProcessor => Any) {
@@ -52,15 +52,16 @@ class DeliveryStreamProcessorSpec extends IllMessageSpec {
     testCode(new DeliveryStreamProcessor {
       implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
+      val error = new RuntimeException("my error")
       val queueClient: QueueClient = mock[QueueClient]
       (queueClient.sendMessage _)
         .expects(testDelivery)
-        .returning(Future.failed(new RuntimeException("my error")))
+        .returning(Future.failed(error))
         .repeat(repeat)
 
       val deliveryDAO: DeliveryDAO = mock[DeliveryDAO]
       (deliveryDAO.markDeadLetter _)
-        .expects(testDelivery, "my error")
+        .expects(testDelivery, error)
         .returning(Future.successful(true))
         .repeat(repeat)
     })
